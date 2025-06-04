@@ -1,0 +1,364 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 30vh;
+  padding-top: 100px;
+  pointer-events: none;
+  padding-bottom: 40px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.Password-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+.Password-popup input {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+.Password-popup button {
+  padding: 10px 20px;
+  background-color: #ff69b4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.CreateWheel {
+  background-color: #282c34;
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+
+.CreateWheel input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.CreateWheel button {
+  padding: 10px 15px;
+  background-color: #ff69b4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.CreateWheel ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.CreateWheelItem {
+  margin: 10px 0;
+  margin-left: -30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 200px;
+}
+
+.createButton {
+  margin-left: 170px;
+  margin-top: 20px;
+  height: 50px;
+  width: 100px;
+  font-size: 1em;
+
+  margin-bottom: 200px;
+
+}
+
+
+.WheelDetails{
+  background-color: #282c34;
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+}
+
+
+.copyButton{
+  padding: 10px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 0px;
+  cursor: pointer;
+}
+.copyButton::after{
+  background-color: #ff69b4;
+
+}
+
+body{
+  max-width: 100%;
+}
+.WheelDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* Centrage horizontal de tous les éléments */
+  justify-content: center;
+  max-width: 100%;
+  padding: 10px;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+.back-button-img {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.wheel-title {
+  font-size: 2rem;
+  margin-top: 50px;
+}
+
+
+.how-to-use{
+  margin-bottom: 100px;
+}
+
+
+.wheel-info, .copy-link-button {
+  width: 100%;
+  text-align: center;
+}
+
+.wheel-segments {
+  margin: 20px 0;
+}
+
+.copyButton {
+  max-width: 200px;   /* Limite la largeur du bouton */
+  width: 100%;
+}
+
+.copy-link-button {
+  margin-top: 30px;
+}
+
+
+.copyButton {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #ff69b4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.loading, .error-message {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.WheelDetails {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 10px;
+  text-align: center;
+}
+
+.spinButton, .copyButton {
+  background-color: #ff69b4;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.spinButton:hover, .copyButton:hover {
+  background-color: #ff85c1;
+}
+
+.wheel-segments text {
+  word-wrap: break-word;
+  white-space: pre-line; /* Pour interpréter \n comme un retour à la ligne */
+}
+
+.action-buttons {
+ margin-bottom: 0px;
+}
+
+/* Styles pour la modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  width: 90%;
+  height: 90%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
+
+.modal-content > div:first-of-type {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  /* Limiter les dimensions au carré maximal possible */
+  width: 100vw;
+  height: 100vw;
+
+  max-width: 700px;
+  max-height: 700px;
+
+  /* Forcer les dimensions égales */
+  aspect-ratio: 1 / 1;
+}
+
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background-color : white !important;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.fullscreen-btn {
+  margin-top: 20px;
+  background-color: purple;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.modal-actions button {
+  margin: 10px;
+  padding: 10px 15px;
+  border: none;
+  background-color: #87CEEB;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.hover-container {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.hover-container:hover{
+  overflow: visible;
+}
+
+.hover-container:hover .full-text {
+  display: block;
+}
+
+.full-text {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: max-content;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  white-space: normal;
+  z-index: 10;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}

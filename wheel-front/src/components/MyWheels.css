@@ -1,0 +1,54 @@
+.MyWheels {
+  padding: 20px;
+  text-align: center;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+.back-button-img {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.title {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.wheels-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.wheel-card {
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  padding: 20px;
+  width: 200px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wheel-card h2 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+.wheel-card button {
+  margin: 5px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.wheel-card button:hover {
+  background-color: #ddd;
+}
