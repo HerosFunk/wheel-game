@@ -228,7 +228,7 @@ const EditWheel = () => {
       });
       const updatedWheel = await response.json();
       setWheel(updatedWheel);
-      await setAllElementsActive(); // Call setAllElementsActive after resetting results
+      await setAllElementsActive();
     } catch (error) {
       console.error("Error resetting results:", error);
     }
