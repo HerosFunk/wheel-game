@@ -286,18 +286,16 @@ const CustomWheel = ({
             console.log('✅ Animation completed. Final rotation:', newRotation.toFixed(1));
             setIsInternalAnimating(false);
             
-            // Important: délai pour s'assurer que tout est stable
-            setTimeout(() => {
-                setLastSpinComplete(true);
-                spinStartedRef.current = false;
-                
-                // Forcer un redraw pour réactiver le hover
-                const wheelCtx = wheelCanvasRef.current?.getContext('2d');
-                if (wheelCtx) {
-                    drawWheelOnly(wheelCtx, newRotation);
-                }
-                console.log('🎯 Hover re-enabled with rotation:', newRotation.toFixed(1));
-            }, 300);
+            // Reset immédiat pour réactiver le hover
+            setLastSpinComplete(true);
+            spinStartedRef.current = false;
+            
+            // Forcer un redraw pour réactiver le hover
+            const wheelCtx = wheelCanvasRef.current?.getContext('2d');
+            if (wheelCtx) {
+                drawWheelOnly(wheelCtx, newRotation);
+            }
+            console.log('🎯 Hover re-enabled with rotation:', newRotation.toFixed(1));
             
             const selectedElement = getSelectedElement(newRotation);
             onSpinEnd && onSpinEnd(selectedElement);
@@ -331,23 +329,17 @@ const CustomWheel = ({
     // Gérer le déclenchement du spin depuis l'extérieur
     useEffect(() => {
         if (isSpinning && lastSpinComplete && !isInternalAnimating && elements.length > 0) {
-            const timer = setTimeout(() => {
-                startSpin();
-            }, 100);
-            
-            return () => clearTimeout(timer);
+            // Démarrer le spin immédiatement sans délai
+            startSpin();
         }
     }, [isSpinning, lastSpinComplete, isInternalAnimating, elements.length, startSpin]);
 
     // Reset quand isSpinning devient false
     useEffect(() => {
         if (!isSpinning && !isInternalAnimating) {
-            const timer = setTimeout(() => {
-                setLastSpinComplete(true);
-                spinStartedRef.current = false;
-            }, 100);
-            
-            return () => clearTimeout(timer);
+            // Reset immédiat sans délai
+            setLastSpinComplete(true);
+            spinStartedRef.current = false;
         }
     }, [isSpinning, isInternalAnimating]);
 
@@ -375,17 +367,14 @@ const CustomWheel = ({
 
     // Initialisation
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const wheelCtx = wheelCanvasRef.current?.getContext('2d');
-            const pointerCtx = pointerCanvasRef.current?.getContext('2d');
-            
-            if (wheelCtx && pointerCtx && elements.length > 0) {
-                drawWheelOnly(wheelCtx, currentRotation);
-                drawPointerOnly(pointerCtx);
-            }
-        }, 50);
+        // Initialisation immédiate sans délai
+        const wheelCtx = wheelCanvasRef.current?.getContext('2d');
+        const pointerCtx = pointerCanvasRef.current?.getContext('2d');
         
-        return () => clearTimeout(timer);
+        if (wheelCtx && pointerCtx && elements.length > 0) {
+            drawWheelOnly(wheelCtx, currentRotation);
+            drawPointerOnly(pointerCtx);
+        }
     }, [drawWheelOnly, drawPointerOnly, currentRotation, elements.length]);
 
     const canvasWidth = wheelSize;

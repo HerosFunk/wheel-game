@@ -348,7 +348,7 @@
 }
 
 .result-weight {
-  color: #74b9ff;
+  color: #000000;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -360,7 +360,7 @@
 }
 
 .result-time {
-  color: #81ecec;
+  color: #000000;
   display: flex;
   align-items: center;
   gap: 4px;
