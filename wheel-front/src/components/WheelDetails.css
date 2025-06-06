@@ -105,9 +105,7 @@
 }
 
 .wheel-container {
-    margin: 0 auto 32px auto;
     background: transparent;
-    padding: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -221,7 +219,7 @@
 
 .selected-element-display h2 {
     font-size: 1.4rem;
-    color: #d63031;
+    color: #ffffff;
     margin-bottom: 16px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -299,37 +297,6 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.element-card.highlighted {
-    transform: translateY(-4px) scale(1.02);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        box-shadow: 0 8px 24px rgba(255, 179, 0, 0.3);
-    }
-    50% {
-        box-shadow: 0 12px 32px rgba(255, 179, 0, 0.5);
-    }
-}
-
-.element-card.highlighted::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    animation: shimmerCard 1.5s ease-in-out infinite;
-    pointer-events: none;
-}
-
-@keyframes shimmerCard {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
 .element-card.disabled {
     opacity: 0.5;
     background: #2a2c32;
@@ -351,7 +318,7 @@
 .element-label {
     color: #fff;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1.75rem;
     word-break: break-word;
     flex: 1;
 }

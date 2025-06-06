@@ -10,7 +10,7 @@ import { getWheel, spinWheel, updateElementStatus, setAllElementsActive, resetRe
 import './WheelDetails.css';
 import io from 'socket.io-client';
 
-  const notify = () => toast("Link copied!");
+const notify = () => toast("Link copied!");
 const API_URL = "https://wheel-game.azurewebsites.net";
 
 const colorPalette = [
@@ -18,11 +18,10 @@ const colorPalette = [
   "#f39c12", "#e67e22", "#34495e", "#95a5a6", "#fd79a8", "#6c5ce7",
   "#74b9ff", "#00b894", "#fdcb6e", "#e17055", "#81ecec", "#a29bfe",
   "#ffeaa7", "#fab1a0", "#ff7675", "#55a3ff", "#fd79a8", "#fdcb6e"
-]; // Palette étendue avec plus de couleurs variées
+];
 
 const assignColors = (elements, colorPalette) => {
   return elements.map((element, index) => {
-    // Utiliser l'index pour choisir une couleur de façon cyclique
     const colorIndex = index % colorPalette.length;
     return {
       ...element,
@@ -36,9 +35,7 @@ const calculateProbability = (weight, segments) => {
   return ((weight / totalWeight) * 100).toFixed(1);
 };
 
-// Fonction utilitaire pour créer des variations de couleur
 const createColorVariations = (baseColor) => {
-  // Convertir hex en RGB
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
@@ -51,7 +48,6 @@ const createColorVariations = (baseColor) => {
   const rgb = hexToRgb(baseColor);
   if (!rgb) return { light: baseColor, dark: baseColor, alpha: baseColor + '20' };
 
-  // Créer des variations
   const light = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
   const dark = `rgb(${Math.max(0, rgb.r - 30)}, ${Math.max(0, rgb.g - 30)}, ${Math.max(0, rgb.b - 30)})`;
   const alpha = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
@@ -66,18 +62,17 @@ const WheelDetails = () => {
   const [spinsLeft, setSpinsLeft] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [mustSpin, setMustSpin] = useState(false); // État pour contrôler le spin
+  const [mustSpin, setMustSpin] = useState(false);
   const [results, setResults] = useState([]);
   const [isSocketReady, setIsSocketReady] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedElement, setSelectedElement] = useState(null);
   const [socket, setSocket] = useState(null);
   const [lastResult, setLastResult] = useState(null);
-  const [hoveredElement, setHoveredElement] = useState(null); // Nouvel état pour l'élément survolé
-  const [showResultsModal, setShowResultsModal] = useState(false); // État pour la modal des résultats
-  const [recentResults, setRecentResults] = useState([]); // Stockage des résultats récents
+  const [hoveredElement, setHoveredElement] = useState(null);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [recentResults, setRecentResults] = useState([]);
 
-  // Fonction pour charger les résultats récents
   const loadRecentResults = async () => {
     try {
       const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results/recent?limit=5`, {
@@ -91,11 +86,8 @@ const WheelDetails = () => {
       }
       
       const data = await response.json();
-      console.log("Recent results loaded:", data); // Debug
       setRecentResults(data);
     } catch (error) {
-      console.error("Error loading recent results:", error);
-      // Fallback vers l'ancien système
       if (wheel && wheel.selectedElement) {
         const resultIds = wheel.selectedElement.split(',').filter(id => id.trim());
         const parsedResults = resultIds.slice(-5).map((id, index) => {
@@ -112,14 +104,13 @@ const WheelDetails = () => {
     }
   };
 
-  const userRole = Cookies.get("role") || ""; // Récupérer le rôle depuis le cookie
+  const userRole = Cookies.get("role") || "";
 
   const fetchWheel = async () => {
     try {
       setIsLoading(true);
       const data = await getWheel(wheelId);
       
-      // Assigner des couleurs aux éléments s'ils n'en ont pas
       const elementsWithColors = assignColors(data.elements || [], colorPalette);
       
       setWheel({
@@ -127,24 +118,20 @@ const WheelDetails = () => {
         elements: elementsWithColors
       });
       setSpinsLeft(data.numberOfSpinsLeft === -1 ? "Unlimited" : data.numberOfSpinsLeft.toString());
-      setIsSocketReady(true); // Les données sont prêtes, autoriser les sockets
+      setIsSocketReady(true);
       
-      // Charger aussi les résultats récents
       await loadRecentResults();
     } catch (error) {
       setErrorMessage("Erreur lors du chargement de la roue");
-      console.error("Erreur:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Initialiser le socket
     const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000');
     setSocket(newSocket);
 
-    // Nettoyer le socket lors du démontage du composant
     return () => {
       if (newSocket) {
         newSocket.disconnect();
@@ -158,19 +145,14 @@ const WheelDetails = () => {
 
   useEffect(() => {
     if (socket) {
-      // Écouter les événements de spin
       socket.on('spin', (data) => {
         if (userRole === "creator") {
-          console.log("Spin event received:", data);
           if (!wheel || !wheel.elements) {
-            console.error("Wheel is not initialized yet.");
             return;
           }
           const idElementSelected = data.result;
           
           const lastElementSelected = data.dernierResultat || null;
-          console.log(lastElementSelected);
-          console.log(wheel.elements)
 
           const indexElementSelected = wheel.elements.findIndex(
             (element) => element.id.toString() == idElementSelected.toString()
@@ -182,20 +164,15 @@ const WheelDetails = () => {
                 element.id.toString() == lastElementSelected.toString()
             );
 
-            console.log(indexLastElementSelected);
             if (indexLastElementSelected) {
             const idPrize = indexLastElementSelected.id;
               const indexPrize = wheel.elements.findIndex(
               (element) => element.id === idPrize
             );
 
-            console.log("brotherito");
               const prizeElement = wheel.elements[indexPrize];
 
-            console.log(wheel.removeAfterSelection);
-            console.log("sping");
             if (wheel.removeAfterSelection) {
-              console.log("Remove after selection");
                 const updatedElements = wheel.elements.filter(
                 (element) => element.id !== idPrize
               );
@@ -210,10 +187,7 @@ const WheelDetails = () => {
           }
           }
           
-          console.log(indexElementSelected);
-          // Déclencher le spin visuel
           setMustSpin(true);
-          console.log("spiiiiiin");
 
           if (data.numberOfSpins === -1) {
             setSpinsLeft("Unlimited");
@@ -230,12 +204,10 @@ const WheelDetails = () => {
         }
       });
 
-      // Écouter les mises à jour de la roue
       socket.on('wheel:updated', (data) => {
         setWheel(data);
       });
 
-      // Écouter les mises à jour des éléments
       socket.on('element:statusUpdated', (data) => {
         if (wheel) {
           setWheel(prevWheel => ({
@@ -247,7 +219,6 @@ const WheelDetails = () => {
         }
       });
 
-      // Nettoyer les écouteurs lors du démontage
       return () => {
         socket.off('spin');
         socket.off('wheel:updated');
@@ -257,40 +228,27 @@ const WheelDetails = () => {
   }, [isSocketReady, spinsLeft, userRole, wheel, socket]);
 
   const handleSpin = async () => {
-    console.log("handleSpin called, mustSpin:", mustSpin, "canSpin:", canSpin);
-    
     if (mustSpin || !wheel || spinsLeft === "0") {
-      console.log("Spin blocked - mustSpin:", mustSpin, "wheel:", !!wheel, "spinsLeft:", spinsLeft);
       return;
     }
 
     try {
-      console.log("Starting spin...");
       setShowConfetti(false);
-      
-      // Déclencher directement l'animation visuelle d'abord
       setMustSpin(true);
       
-      // Puis appeler l'API en arrière-plan
       const response = await spinWheel(wheelId);
-      console.log("API response:", response);
-      
-      // Rafraîchir les données de la roue
       await fetchWheel();
     } catch (error) {
-      console.error("Error during spin:", error);
       setErrorMessage("Erreur lors de la rotation de la roue");
-      setMustSpin(false); // Arrêter le spin en cas d'erreur
+      setMustSpin(false);
     }
   };
 
   const handleSpinEnd = (element) => {
-    console.log("Spin ended, selected element:", element);
-    setMustSpin(false); // Arrêter le spin
+    setMustSpin(false);
     setSelectedElement(element);
     setShowConfetti(true);
     
-    // Petit délai avant de cacher les confettis
     setTimeout(() => {
       setShowConfetti(false);
     }, 3000);
@@ -306,7 +264,6 @@ const WheelDetails = () => {
       fetchWheel();
     } catch (error) {
       setErrorMessage("Erreur lors de la mise à jour de l'élément");
-      console.error("Erreur:", error);
     }
   };
 
@@ -318,7 +275,6 @@ const WheelDetails = () => {
       fetchWheel();
     } catch (error) {
       setErrorMessage("Erreur lors de la réinitialisation");
-      console.error("Erreur:", error);
     }
   };
 
@@ -328,7 +284,6 @@ const WheelDetails = () => {
       fetchWheel();
       } catch (error) {
       setErrorMessage("Erreur lors de l'activation des éléments");
-      console.error("Erreur:", error);
     }
   };
 
@@ -355,9 +310,8 @@ const WheelDetails = () => {
     return <div className="error-message">Roue non trouvée ou aucun élément</div>;
   }
 
-  // Vérifier si l'utilisateur peut faire tourner la roue
   const canSpin = spinsLeft !== "0" && !mustSpin && wheel.elements.some(el => el.isActif);
-  const wheelDisabled = !canSpin && !mustSpin; // Ne pas désactiver pendant l'animation
+  const wheelDisabled = !canSpin && !mustSpin;
 
   return (
     <div className="WheelDetails">
@@ -368,8 +322,7 @@ const WheelDetails = () => {
       </div>
 
       <div className="wheel-header">
-        <h1 className="wheel-title">{wheel.name}</h1>
-        <div className="wheel-subtitle">Spin the wheel to get your result!</div>
+        <h1 className="wheel-title">{wheel.name.toUpperCase()}</h1>
       </div>
 
       <div className="wheel-info-card">
@@ -401,21 +354,20 @@ const WheelDetails = () => {
       <div className="wheel-section-layout">
         <div className="wheel-container">
           <CustomWheel
-            elements={wheel.elements.filter(el => el.isActif)} // Seulement les éléments actifs
+            elements={wheel.elements.filter(el => el.isActif)}
             onSpinEnd={handleSpinEnd}
             onSpinStart={handleSpinStart}
             isSpinning={mustSpin}
             spinDuration={5}
             spinSpeed={10}
-            wheelSize={500} // Réduit de 600 à 500
-            borderWidth={0} // Suppression complète du border
+            wheelSize={500}
+            borderWidth={0}
             customColors={wheel.elements.filter(el => el.isActif).map(element => element.color)}
-            disabled={wheelDisabled} // Utiliser la nouvelle variable
+            disabled={wheelDisabled}
             onElementHover={setHoveredElement}
           />
         </div>
         
-        {/* Bouton SPIN */}
         <div className="spin-controls">
           <button 
             className={`spin-button-large ${!canSpin ? 'disabled' : ''}`}
@@ -456,7 +408,6 @@ const WheelDetails = () => {
               {selectedElement.label}
             </div>
             
-            {/* Indicateur de couleur pour l'élément sélectionné */}
             {selectedElement.color && (
               <div className="selected-color-indicator">
                 <div 
@@ -469,14 +420,12 @@ const WheelDetails = () => {
         )}
       </div>
 
-      {/* Bouton pour copier le lien */}
       <div className="copy-link-button">
         <button className="copyButton" onClick={copyToClipboard}>
           Copy Wheel Link
         </button>
       </div>
 
-      {/* Historique des résultats */}
       {results && results.length > 0 && (
         <div className="results-history">
           <h3>Results History</h3>
@@ -498,7 +447,6 @@ const WheelDetails = () => {
               style={{
                 borderLeft: `6px solid ${element.color || '#ccc'}`,
                 backgroundColor: `${element.color}15`,
-                // Animation de surbrillance si c'est l'élément survolé
                 boxShadow: hoveredElement?.id === element.id || hoveredElement?._id === element._id 
                   ? `0 8px 24px ${element.color}40, 0 0 0 2px ${element.color}80` 
                   : '0 2px 8px rgba(0, 0, 0, 0.1)',
@@ -534,7 +482,6 @@ const WheelDetails = () => {
         </div>
       </div>
 
-      {/* Tooltip for hovered element */}
       {hoveredElement && (
         <div 
           className="hover-tooltip"
@@ -553,38 +500,23 @@ const WheelDetails = () => {
           <p><strong>Weight:</strong> {hoveredElement.weight}</p>
           <p><strong>Probability:</strong> {calculateProbability(hoveredElement.weight, wheel.elements.filter(el => el.isActif))}%</p>
           
-          {/* Indicateur de couleur dans le tooltip */}
           <div className="color-indicator-tooltip">
             <div 
               className="color-dot"
               style={{ backgroundColor: hoveredElement.color }}
             ></div>
-            <span>Element Color</span>
           </div>
         </div>
       )}
 
-      {/* Contrôles administrateur */}
       {true && (
         <div className="admin-controls">
-          <h3>Administrator Controls</h3>
           <div className="admin-buttons">
             <button 
               className="control-button" 
-              onClick={(e) => {
-                e.preventDefault();
-                console.log("View Results button clicked, current state:", showResultsModal);
-                setShowResultsModal(true);
-                console.log("showResultsModal set to true");
-              }}
+              onClick={() => setShowResultsModal(true)}
             >
               View Results & Stats
-            </button>
-            <button className="control-button" onClick={handleActivateAll}>
-              Reactivate All Elements
-            </button>
-            <button className="control-button" onClick={handleReset}>
-              Reset Results
             </button>
             <button className="control-button" onClick={() => navigate(`/edit-wheel/${wheelId}`)}>
               Edit Wheel
@@ -611,49 +543,6 @@ const WheelDetails = () => {
 
       <ToastContainer />
 
-      {/* Test button temporaire */}
-      {process.env.NODE_ENV === 'development' && (
-        <button 
-          style={{
-            position: 'fixed',
-            top: '100px',
-            left: '10px',
-            background: 'red',
-            color: 'white',
-            padding: '10px',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            zIndex: 9999
-          }}
-          onClick={() => {
-            console.log("Force opening modal");
-            setShowResultsModal(prev => !prev);
-          }}
-        >
-          Toggle Modal (Test)
-        </button>
-      )}
-
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          position: 'fixed', 
-          top: '10px', 
-          left: '10px', 
-          background: 'rgba(0,0,0,0.8)', 
-          color: 'white', 
-          padding: '10px', 
-          borderRadius: '4px',
-          fontSize: '12px',
-          zIndex: 9999
-        }}>
-          showResultsModal: {showResultsModal.toString()}<br/>
-          recentResults: {recentResults.length}
-        </div>
-      )}
-
-      {/* Modal des résultats */}
       <ResultsDisplay 
         wheelId={wheelId}
         isVisible={showResultsModal}

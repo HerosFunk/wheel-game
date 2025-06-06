@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './CustomWheel.css';
 
 const pointerSize = 60;
@@ -23,25 +23,24 @@ const CustomWheel = ({
     disabled = false,
     onElementHover
 }) => {
-    const wheelCanvasRef = useRef(null); // Canvas pour la roue uniquement
-    const pointerCanvasRef = useRef(null); // Canvas pour la flèche uniquement
+    const wheelCanvasRef = useRef(null);
+    const pointerCanvasRef = useRef(null);
     const containerRef = useRef(null);
     
     const [currentRotation, setCurrentRotation] = useState(0);
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [isInternalAnimating, setIsInternalAnimating] = useState(false);
     const [hoveredElementIndex, setHoveredElementIndex] = useState(null);
+    const [lastSpinComplete, setLastSpinComplete] = useState(true);
     const animationRef = useRef(null);
-    // Suppression de la variable rotation qui créait de la confusion
+    const spinStartedRef = useRef(false);
 
-    // Calculer les angles pour chaque élément
-    const calculateAngles = () => {
+    const calculateAngles = useCallback(() => {
         const totalElements = elements.length;
         const anglePerElement = 360 / totalElements;
         return elements.map((_, index) => index * anglePerElement);
-    };
+    }, [elements.length]);
 
-    // Fonction utilitaire pour convertir hex en RGB
-    const hexToRgb = (hex) => {
+    const hexToRgb = useCallback((hex) => {
         if (!hex) return null;
         if (hex.startsWith('#')) {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -52,44 +51,73 @@ const CustomWheel = ({
             } : null;
         }
         return { r: 255, g: 105, b: 180 };
-    };
+    }, []);
 
-    // Fonction pour déterminer quel élément est sélectionné (corrigée)
-    const getSelectedElement = (rotation) => {
-        // La flèche pointe vers le haut (0°), donc on calcule quel segment est à cette position
+    const getSelectedElement = useCallback((rotation) => {
         const normalizedRotation = ((rotation % 360) + 360) % 360;
         const anglePerElement = 360 / elements.length;
         
-        // Calculer quel segment est en haut (où pointe la flèche)
-        // La flèche est à 270° en coordonnées canvas (haut), donc on ajuste
-        const flècheAngle = 270; // Position de la flèche en degrés
+        const flècheAngle = 270;
         const segmentAtPointer = (flècheAngle - normalizedRotation + 360) % 360;
         const selectedIndex = Math.floor(segmentAtPointer / anglePerElement) % elements.length;
         
         return elements[selectedIndex];
-    };
+    }, [elements]);
 
-    // Fonction pour détecter quel segment est survolé
-    const getHoveredElement = (mouseX, mouseY, centerX, centerY, radius, rotation) => {
+    const getHoveredElement = useCallback((mouseX, mouseY, centerX, centerY, radius, rotation) => {
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance > radius) return null;
+        if (distance > radius || distance < 20) return null;
         
+        // Calculer l'angle de la souris par rapport au centre
         let mouseAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+        // Normaliser entre 0 et 360
         mouseAngle = (mouseAngle + 360) % 360;
         
-        const adjustedAngle = (mouseAngle - rotation + 360) % 360;
-        const anglePerElement = 360 / elements.length;
-        const elementIndex = Math.floor(adjustedAngle / anglePerElement);
+        // Ajuster pour que 0° soit en haut (au lieu de droite)
+        let adjustedAngle = (mouseAngle + 90) % 360;
         
-        return elementIndex < elements.length ? elementIndex : null;
-    };
+        // Appliquer la rotation inverse pour obtenir l'angle dans le référentiel de la roue
+        let relativeAngle = (adjustedAngle - rotation + 360) % 360;
+        
+        const anglePerElement = 360 / elements.length;
+        
+        // Correction importante : d'après vos observations, il y a un décalage de 2.5 segments
+        // Il faut donc corriger de -2.5 segments (dans le sens anti-horaire)
+        // Pour une roue de 10 éléments (36° par segment), on corrige de -90°
+        // Pour une roue de 6 éléments (60° par segment), on corrige de -150°
+        const correctionAngle = -2.5 * anglePerElement;
+        let correctedAngle = (relativeAngle + correctionAngle);
+        
+        // Normaliser l'angle pour qu'il soit toujours entre 0 et 360
+        correctedAngle = ((correctedAngle % 360) + 360) % 360;
+        
+        let elementIndex = Math.floor(correctedAngle / anglePerElement);
+        
+        // S'assurer que l'index est dans les limites
+        elementIndex = Math.max(0, Math.min(elements.length - 1, elementIndex));
+        
+        console.log('Hover calculation (corrected):', {
+            mouseX, mouseY,
+            rawMouseAngle: mouseAngle.toFixed(1),
+            adjustedAngle: adjustedAngle.toFixed(1),
+            rotation: rotation.toFixed(1),
+            relativeAngle: relativeAngle.toFixed(1),
+            correctedAngle: correctedAngle.toFixed(1),
+            anglePerElement: anglePerElement.toFixed(1),
+            elementIndex,
+            elementsCount: elements.length,
+            correctionAngle: correctionAngle.toFixed(1)
+        });
+        
+        return elementIndex;
+    }, [elements.length]);
 
-    // Gestionnaire de mouvement de souris (corrigé)
-    const handleMouseMove = (event) => {
-        if (isAnimating) return;
+    const handleMouseMove = useCallback((event) => {
+        // Permettre le hover seulement si pas de spin en cours ET que le dernier spin est complètement terminé
+        if (isSpinning || isInternalAnimating || !lastSpinComplete) return;
         
         const container = containerRef.current;
         if (!container) return;
@@ -104,41 +132,39 @@ const CustomWheel = ({
         
         const elementIndex = getHoveredElement(mouseX, mouseY, centerX, centerY, radius, currentRotation);
         
+        // Correction: toujours mettre à jour même si les indices sont différents
         if (elementIndex !== hoveredElementIndex) {
+            console.log('Updating hoveredElementIndex from', hoveredElementIndex, 'to', elementIndex);
             setHoveredElementIndex(elementIndex);
-            if (elementIndex !== null && onElementHover) {
+            
+            if (elementIndex !== null && elementIndex >= 0 && onElementHover) {
                 onElementHover(elements[elementIndex]);
-            } else if (elementIndex === null && onElementHover) {
+            } else if ((elementIndex === null || elementIndex < 0) && onElementHover) {
                 onElementHover(null);
             }
         }
-    };
+    }, [isSpinning, isInternalAnimating, lastSpinComplete, wheelSize, borderWidth, currentRotation, hoveredElementIndex, onElementHover, elements, getHoveredElement]);
 
-    // Gestionnaire pour quitter la zone du canvas
-    const handleMouseLeave = () => {
-        setHoveredElementIndex(null);
-        if (onElementHover) {
-            onElementHover(null);
+    const handleMouseLeave = useCallback(() => {
+        if (!isSpinning && !isInternalAnimating && lastSpinComplete) {
+            setHoveredElementIndex(null);
+            if (onElementHover) {
+                onElementHover(null);
+            }
         }
-    };
+    }, [isSpinning, isInternalAnimating, lastSpinComplete, onElementHover]);
 
-    // Dessiner UNIQUEMENT la roue (segments qui tournent) - DEBUG AJOUTÉ
-    const drawWheelOnly = (ctx, rotation) => {
-        console.log("drawWheelOnly called with rotation:", rotation, "elements:", elements.length);
-        
+    const drawWheelOnly = useCallback((ctx, rotation) => {
         const centerX = wheelSize / 2;
         const centerY = wheelSize / 2 + pointerSize + 10;
         const radius = (wheelSize - borderWidth * 2) / 2;
         const angles = calculateAngles();
         
-        // Vider le canvas de la roue
         ctx.clearRect(0, 0, wheelSize, wheelSize + pointerSize + 20);
         
-        // Dessiner seulement les segments
         elements.forEach((element, index) => {
             ctx.save();
             
-            // Les segments commencent à 0° et sont décalés par la rotation
             const baseAngle = angles[index];
             const nextBaseAngle = angles[index + 1] || 360;
             
@@ -150,10 +176,10 @@ const CustomWheel = ({
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.closePath();
             
-            // Couleur du segment
             let color = customColors[index] || `hsl(${(index * 360) / elements.length}, 70%, 60%)`;
             
-            if (hoveredElementIndex === index && !isAnimating) {
+            // Effet de hover seulement si toutes les conditions sont réunies
+            if (hoveredElementIndex === index && !isSpinning && !isInternalAnimating && lastSpinComplete) {
                 ctx.shadowColor = color;
                 ctx.shadowBlur = 15;
                 const rgb = hexToRgb(color) || { r: 255, g: 105, b: 180 };
@@ -166,7 +192,6 @@ const CustomWheel = ({
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             
-            // Ajouter le texte
             const textAngle = (startAngle + endAngle) / 2;
             const textRadius = radius * 0.7;
             const textX = centerX + Math.cos(textAngle) * textRadius;
@@ -178,11 +203,9 @@ const CustomWheel = ({
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Gestion du texte simplifiée pour debug
             let label = element.label;
             ctx.font = `bold 20px Arial`;
             
-            // Fond blanc pour le texte
             const textWidth = ctx.measureText(label).width;
             ctx.save();
             ctx.globalAlpha = 0.8;
@@ -196,33 +219,26 @@ const CustomWheel = ({
             ctx.restore();
             ctx.restore();
         });
-        
-        console.log("drawWheelOnly completed");
-    };
+    }, [wheelSize, pointerSize, borderWidth, calculateAngles, elements, customColors, hoveredElementIndex, isSpinning, isInternalAnimating, lastSpinComplete, hexToRgb]);
 
-    // Dessiner UNIQUEMENT la flèche (position absolument fixe) - DEBUG AJOUTÉ
-    const drawPointerOnly = (ctx) => {
+    const drawPointerOnly = useCallback((ctx) => {
         if (!showPointer) return;
-        
-        console.log("drawPointerOnly called");
         
         const centerX = wheelSize / 2;
         const centerY = wheelSize / 2 + pointerSize + 10;
         const radius = (wheelSize - borderWidth * 2) / 2;
         
-        // Vider complètement le canvas de la flèche
         ctx.clearRect(0, 0, wheelSize, wheelSize + pointerSize + 20);
         
         ctx.save();
         
-        // Position ABSOLUMENT FIXE de la flèche
         const pointerTipY = centerY - radius - 5;
         const pointerBaseY = centerY - radius - pointerSize;
         
         ctx.beginPath();
-        ctx.moveTo(centerX, pointerTipY); // Pointe
-        ctx.lineTo(centerX - pointerSize * 0.4, pointerBaseY); // Gauche
-        ctx.lineTo(centerX + pointerSize * 0.4, pointerBaseY); // Droite
+        ctx.moveTo(centerX, pointerTipY);
+        ctx.lineTo(centerX - pointerSize * 0.4, pointerBaseY);
+        ctx.lineTo(centerX + pointerSize * 0.4, pointerBaseY);
         ctx.closePath();
         
         ctx.shadowColor = '#000000';
@@ -239,89 +255,103 @@ const CustomWheel = ({
         ctx.stroke();
         
         ctx.restore();
-        
-        console.log("drawPointerOnly completed");
-    };
+    }, [showPointer, wheelSize, pointerSize, borderWidth, pointerColor]);
 
-    // Animation de rotation avec closure pour capturer la rotation cible
-    const animate = (startTime, targetRotation) => {
+    const animate = useCallback((startTime, targetRotation) => {
         const now = Date.now();
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / (spinDuration * 1000), 1);
         const easeOut = (t) => 1 - Math.pow(1 - t, 3);
         const newRotation = currentRotation + (targetRotation - currentRotation) * easeOut(progress);
         
-        console.log("Animation frame:", { elapsed, progress, newRotation, currentRotation, targetRotation });
+        console.log('🔄 Animation frame:', {
+            elapsed: elapsed.toFixed(0),
+            progress: progress.toFixed(3),
+            currentRotation: currentRotation.toFixed(1),
+            targetRotation: targetRotation.toFixed(1),
+            newRotation: newRotation.toFixed(1)
+        });
         
         setCurrentRotation(newRotation);
         
-        // Redessiner UNIQUEMENT la roue (la flèche ne bouge jamais)
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
         if (wheelCtx) {
-            console.log("Drawing wheel with rotation:", newRotation);
             drawWheelOnly(wheelCtx, newRotation);
-        } else {
-            console.error("No wheel context available");
         }
         
         if (progress < 1) {
             animationRef.current = requestAnimationFrame(() => animate(startTime, targetRotation));
         } else {
-            console.log("Animation completed");
-            setIsAnimating(false);
+            // Animation terminée - réinitialiser tous les états
+            console.log('✅ Animation completed. Final rotation:', newRotation.toFixed(1));
+            setIsInternalAnimating(false);
+            
+            // Important: délai pour s'assurer que tout est stable
+            setTimeout(() => {
+                setLastSpinComplete(true);
+                spinStartedRef.current = false;
+                
+                // Forcer un redraw pour réactiver le hover
+                const wheelCtx = wheelCanvasRef.current?.getContext('2d');
+                if (wheelCtx) {
+                    drawWheelOnly(wheelCtx, newRotation);
+                }
+                console.log('🎯 Hover re-enabled with rotation:', newRotation.toFixed(1));
+            }, 300);
+            
             const selectedElement = getSelectedElement(newRotation);
-            console.log("Selected element:", selectedElement);
             onSpinEnd && onSpinEnd(selectedElement);
         }
-    };
+    }, [currentRotation, spinDuration, drawWheelOnly, getSelectedElement, onSpinEnd]);
 
-    // Démarrer la rotation - CORRIGÉ pour passer la rotation en paramètre
-    const startSpin = () => {
-        console.log("startSpin called - disabled:", disabled, "isAnimating:", isAnimating, "elements:", elements.length);
-        
-        if (disabled || isAnimating || elements.length === 0) {
-            console.log("Spin blocked in startSpin");
+    const startSpin = useCallback(() => {
+        if (disabled || isInternalAnimating || elements.length === 0 || spinStartedRef.current) {
             return;
         }
         
-        console.log("Starting wheel animation");
-        setIsAnimating(true);
+        // Marquer le début du spin
+        spinStartedRef.current = true;
+        setLastSpinComplete(false);
+        setIsInternalAnimating(true);
+        setHoveredElementIndex(null);
+        
+        if (onElementHover) {
+            onElementHover(null);
+        }
+        
         onSpinStart && onSpinStart();
         
-        // Calculer une rotation plus importante pour un effet plus spectaculaire
-        const baseRotation = 360 * spinSpeed; // Tours complets
-        const randomExtra = Math.random() * 360; // Rotation aléatoire supplémentaire
+        const baseRotation = 360 * spinSpeed;
+        const randomExtra = Math.random() * 360;
         const totalRotation = currentRotation + baseRotation + randomExtra;
         
-        console.log("Rotation calculation:", {
-            currentRotation,
-            baseRotation,
-            randomExtra,
-            totalRotation
-        });
-        
-        // Pas besoin de setRotation, on passe directement la valeur
-        // setRotation(totalRotation); // Supprimé car ça crée un delay
-        
-        // Démarrer l'animation avec la rotation cible
-        console.log("Starting animation frame with target rotation:", totalRotation);
         animationRef.current = requestAnimationFrame(() => animate(Date.now(), totalRotation));
-    };
+    }, [disabled, isInternalAnimating, elements.length, onElementHover, onSpinStart, spinSpeed, currentRotation, animate]);
 
-    // Effet pour déclencher le spin - AMÉLIORÉ
+    // Gérer le déclenchement du spin depuis l'extérieur
     useEffect(() => {
-        console.log("useEffect isSpinning:", isSpinning, "isAnimating:", isAnimating, "elements:", elements.length);
-        if (isSpinning && !isAnimating && elements.length > 0) {
-            console.log("Conditions met, starting spin animation");
+        if (isSpinning && lastSpinComplete && !isInternalAnimating && elements.length > 0) {
             const timer = setTimeout(() => {
                 startSpin();
-            }, 100); // Petit délai pour s'assurer que tout est prêt
+            }, 100);
             
             return () => clearTimeout(timer);
         }
-    }, [isSpinning, isAnimating, elements.length]);
+    }, [isSpinning, lastSpinComplete, isInternalAnimating, elements.length, startSpin]);
 
-    // Nettoyage
+    // Reset quand isSpinning devient false
+    useEffect(() => {
+        if (!isSpinning && !isInternalAnimating) {
+            const timer = setTimeout(() => {
+                setLastSpinComplete(true);
+                spinStartedRef.current = false;
+            }, 100);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [isSpinning, isInternalAnimating]);
+
+    // Nettoyage des animations
     useEffect(() => {
         return () => {
             if (animationRef.current) {
@@ -330,43 +360,33 @@ const CustomWheel = ({
         };
     }, []);
 
-    // Redessiner les deux canvas quand nécessaire - AMÉLIORÉ
+    // Redessiner quand nécessaire
     useEffect(() => {
-        console.log("useEffect redraw triggered, elements:", elements.length);
-        
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
         const pointerCtx = pointerCanvasRef.current?.getContext('2d');
         
         if (wheelCtx && pointerCtx && elements.length > 0) {
-            console.log("Drawing both canvases");
-            // Dessiner la roue
+            // Debug: vérifier la rotation actuelle
+            console.log('🎨 Redrawing with rotation:', currentRotation.toFixed(1));
             drawWheelOnly(wheelCtx, currentRotation);
-            // Dessiner la flèche (toujours fixe)
             drawPointerOnly(pointerCtx);
-        } else {
-            console.log("Missing context or elements:", { 
-                wheelCtx: !!wheelCtx, 
-                pointerCtx: !!pointerCtx, 
-                elementsLength: elements.length 
-            });
         }
-    }, [elements, currentRotation, hoveredElementIndex]);
+    }, [elements, currentRotation, hoveredElementIndex, lastSpinComplete, drawWheelOnly, drawPointerOnly]);
 
-    // Effect séparé pour s'assurer que les canvas sont initialisés
+    // Initialisation
     useEffect(() => {
         const timer = setTimeout(() => {
             const wheelCtx = wheelCanvasRef.current?.getContext('2d');
             const pointerCtx = pointerCanvasRef.current?.getContext('2d');
             
             if (wheelCtx && pointerCtx && elements.length > 0) {
-                console.log("Initial draw");
                 drawWheelOnly(wheelCtx, currentRotation);
                 drawPointerOnly(pointerCtx);
             }
         }, 50);
         
         return () => clearTimeout(timer);
-    }, []);
+    }, [drawWheelOnly, drawPointerOnly, currentRotation, elements.length]);
 
     const canvasWidth = wheelSize;
     const canvasHeight = wheelSize + pointerSize + 20;
@@ -379,7 +399,6 @@ const CustomWheel = ({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
         >
-            {/* Canvas pour la roue (qui tourne) */}
             <canvas
                 ref={wheelCanvasRef}
                 width={canvasWidth}
@@ -389,12 +408,11 @@ const CustomWheel = ({
                     position: 'absolute', 
                     top: 0, 
                     left: 0,
-                    cursor: disabled ? 'not-allowed' : 'default',
+                    cursor: disabled ? 'not-allowed' : (lastSpinComplete && !isSpinning ? 'default' : 'wait'),
                     zIndex: 1
                 }}
             />
             
-            {/* Canvas pour la flèche (toujours fixe) */}
             <canvas
                 ref={pointerCanvasRef}
                 width={canvasWidth}
@@ -403,8 +421,8 @@ const CustomWheel = ({
                     position: 'absolute', 
                     top: 0, 
                     left: 0,
-                    pointerEvents: 'none', // La flèche ne doit pas intercepter les événements
-                    zIndex: 2 // Au-dessus de la roue
+                    pointerEvents: 'none',
+                    zIndex: 2
                 }}
             />
         </div>

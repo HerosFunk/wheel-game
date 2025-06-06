@@ -1,5 +1,6 @@
 const Result = require('../models/result.model');
 const Wheel = require('../models/wheel.model');
+const mongoose = require('mongoose');
 
 class ResultService {
     async addResult(wheelId, selectedElementId, elementData, sessionId = null, metadata = {}) {
@@ -68,7 +69,7 @@ class ResultService {
     async getWheelStats(wheelId) {
         try {
             const results = await Result.aggregate([
-                { $match: { wheel: mongoose.Types.ObjectId(wheelId) } },
+                { $match: { wheel: new mongoose.Types.ObjectId(wheelId) } },
                 {
                     $group: {
                         _id: '$selectedElement',
