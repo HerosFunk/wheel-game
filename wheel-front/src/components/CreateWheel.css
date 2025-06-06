@@ -50,7 +50,6 @@
   50% { background-position: 100% 50%; }
 }
 
-/* Section d'entrée principale */
 .input-section {
   background: rgba(46, 48, 56, 0.9);
   backdrop-filter: blur(10px);
@@ -91,7 +90,6 @@
   font-weight: normal;
 }
 
-/* Container des segments */
 .segments-container {
   background: rgba(46, 48, 56, 0.9);
   backdrop-filter: blur(10px);
@@ -140,7 +138,6 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Boutons des segments */
 .CreateWheel button {
   background: linear-gradient(135deg, #ff6b6b, #ee5a24);
   color: white;
@@ -166,7 +163,6 @@
   transform: translateY(0);
 }
 
-/* Bouton Add spécial */
 .add-button {
   background: linear-gradient(135deg, #00b894, #00a085) !important;
   box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3) !important;
@@ -177,7 +173,6 @@
   box-shadow: 0 6px 16px rgba(0, 184, 148, 0.4) !important;
 }
 
-/* Bouton Edit spécial */
 .edit-button {
   background: linear-gradient(135deg, #6c5ce7, #5f3dc4) !important;
   box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3) !important;
@@ -189,7 +184,6 @@
   box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4) !important;
 }
 
-/* Bouton Delete spécial */
 .delete-button {
   background: linear-gradient(135deg, #e17055, #d63031) !important;
   box-shadow: 0 4px 12px rgba(225, 112, 85, 0.3) !important;
@@ -200,7 +194,6 @@
   box-shadow: 0 6px 16px rgba(225, 112, 85, 0.4) !important;
 }
 
-/* Section des options */
 .options-section {
   background: rgba(46, 48, 56, 0.9);
   backdrop-filter: blur(10px);
@@ -236,7 +229,6 @@
   cursor: pointer;
 }
 
-/* Bouton principal Create */
 .createButton {
   background: linear-gradient(135deg, #ffb300, #e67e22) !important;
   color: #2d3436 !important;
@@ -277,7 +269,6 @@
   left: 100%;
 }
 
-/* Bouton Preview */
 .preview-button {
   background: linear-gradient(135deg, #00b894, #00a085) !important;
   box-shadow: 0 8px 20px rgba(0, 184, 148, 0.4) !important;
@@ -293,7 +284,6 @@
   box-shadow: 0 12px 25px rgba(0, 184, 148, 0.5) !important;
 }
 
-/* Messages d'erreur */
 .error-message {
   background: linear-gradient(135deg, rgba(225, 112, 85, 0.9), rgba(214, 48, 49, 0.9));
   color: white;
@@ -307,7 +297,6 @@
   max-width: 600px;
 }
 
-/* Modal pour preview */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -376,7 +365,6 @@
   transform: none !important;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .CreateWheel {
     padding: 15px;

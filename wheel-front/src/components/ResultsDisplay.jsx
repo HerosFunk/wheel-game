@@ -12,14 +12,11 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
   const [dateFilter, setDateFilter] = useState('');
   const [elementFilter, setElementFilter] = useState('');
 
-  // Onglets avec icônes
   const tabs = [
     { id: 'recent', label: 'Recent Results', icon: '🕐' },
     { id: 'stats', label: 'Statistics', icon: '📊' },
-    //{ id: 'analytics', label: 'Analytics', icon: '📈' }
   ];
 
-  // Charger les résultats récents
   const loadRecentResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -42,7 +39,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [wheelId]);
 
-  // Charger les statistiques avec calculs avancés
   const loadStats = useCallback(async () => {
     try {
       setLoading(true);
@@ -65,7 +61,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [wheelId]);
 
-  // Charger l'historique complet avec pagination
   const loadHistory = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
@@ -98,7 +93,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [wheelId]);
 
-  // Filtrer les résultats
   const filteredResults = useMemo(() => {
     if (!results) return [];
     
@@ -116,14 +110,12 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     });
   }, [results, searchTerm, dateFilter, elementFilter]);
 
-  // Obtenir les éléments uniques pour le filtre
   const uniqueElements = useMemo(() => {
     if (!results) return [];
     const elements = [...new Set(results.map(r => r.elementLabel))];
     return elements.filter(Boolean);
   }, [results]);
 
-  // Exporter les données
   const exportData = useCallback((format = 'csv') => {
     if (!results || results.length === 0) return;
     
@@ -163,18 +155,15 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [results, wheelId]);
 
-  // Calculer les analytics
   const analytics = useMemo(() => {
     if (!results || results.length === 0) return null;
     
-    // Tendances par heure
     const hourlyTrends = results.reduce((acc, result) => {
       const hour = new Date(result.createdAt).getHours();
       acc[hour] = (acc[hour] || 0) + 1;
       return acc;
     }, {});
     
-    // Séquences communes
     const sequences = [];
     for (let i = 0; i < results.length - 1; i++) {
       const current = results[i].elementLabel;
@@ -190,7 +179,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
       }
     }
     
-    // Streaks (séries consécutives)
     const streaks = [];
     let currentStreak = { element: results[0]?.elementLabel, count: 1 };
     
@@ -225,7 +213,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
       } else if (activeTab === 'stats') {
         loadStats();
       } else if (activeTab === 'analytics') {
-        //loadRecentResults(); // Pour les analytics, on a besoin des résultats
       }
     }
   }, [isVisible, wheelId, activeTab, loadRecentResults, loadStats]);
@@ -259,7 +246,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [hasMore, loading, activeTab, page, loadHistory]);
 
-  // Gérer la fermeture avec Escape
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isVisible) {
@@ -281,7 +267,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        {/* Onglets */}
         <div className="results-tabs">
           {tabs.map(tab => (
             <button
@@ -303,7 +288,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
             </div>
           )}
 
-          {/* Onglet Recent Results */}
           {activeTab === 'recent' && (
             <div className="recent-results">
               <div className="section-header">
@@ -312,7 +296,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
                 </h3>
               </div>
 
-              {/* Filtres */}
               <div className="filters-container">
                 <input
                   type="text"
@@ -364,7 +347,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
             </div>
           )}
 
-          {/* Onglet Statistics */}
           {activeTab === 'stats' && (
             <div className="stats-results">
               {stats && (
@@ -459,7 +441,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
             </div>
           )}
 
-          {/* Onglet Analytics */}
           {false && (
             <div className="analytics-section">
               <div className="section-header">
@@ -470,7 +451,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
 
               {analytics && (
                 <>
-                  {/* Statistiques générales */}
                   <div className="stats-cards">
                     <div className="stat-card">
                       <div className="stat-number">{analytics.totalSpins}</div>
@@ -490,7 +470,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Tendances horaires */}
                   <div className="chart-container">
                     <div className="chart-placeholder">
                       <h4>📅 Activity by Hour</h4>
@@ -505,7 +484,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
                     </div>
                   </div>
 
-                  {/* Séquences les plus fréquentes */}
                   {analytics.topSequences.length > 0 && (
                     <div className="element-stats">
                       <h4 style={{ color: '#ffb300', marginBottom: '16px' }}>🔗 Most Common Sequences</h4>
@@ -530,7 +508,6 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
                     </div>
                   )}
 
-                  {/* Streaks les plus longues */}
                   {analytics.longestStreaks.length > 0 && (
                     <div className="element-stats">
                       <h4 style={{ color: '#ffb300', marginBottom: '16px' }}>🔥 Longest Streaks</h4>

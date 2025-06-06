@@ -73,7 +73,7 @@ const EditWheel = () => {
           const elements = data.elements || [];
           setSegments(elements.map(element => ({ 
             id: element._id || element.id, 
-            name: element.label || element.name, 
+            label: element.label || element.name, 
             weight: element.weight || 1, 
             isActif: element.isActif !== false 
           })).sort((a, b) => {
@@ -133,7 +133,7 @@ const EditWheel = () => {
 
     const newSegment = {
       id: `temp_${Date.now()}`,
-      name: segmentName,
+      label: segmentName,
       weight: weight,
       isActif: true
     };
@@ -173,13 +173,13 @@ const EditWheel = () => {
 
   const handleEditClick = (index) => {
     setEditingIndex(index);
-    setEditingValue(segments[index].name);
+    setEditingValue(segments[index].label);
   };
 
   const handleEditSave = (index) => {
     if (editingValue.trim()) {
       const updatedSegments = [...segments];
-      updatedSegments[index] = { ...updatedSegments[index], name: editingValue.trim() };
+      updatedSegments[index] = { ...updatedSegments[index], label: editingValue.trim() };
       setSegments(updatedSegments);
       setEditingIndex(null);
       setEditingValue("");
@@ -214,13 +214,11 @@ const EditWheel = () => {
       numberOfSpins: options.infinitySpin ? -1 : parseInt(spinLimit),
       elements: segments.map(segment => ({
         _id: segment.id && !segment.id.toString().startsWith('temp_') ? segment.id : undefined,
-        label: segment.name,
+        label: segment.label,
         weight: segment.weight || 1,
         isActif: segment.isActif !== undefined ? segment.isActif : true,
       }))
     };
-
-    console.log("Sending wheel data:", wheelData);
 
     try {
       const response = await fetch(`${API_URL}/wheels/${wheelId}`, {
@@ -262,7 +260,7 @@ const EditWheel = () => {
       const elements = updatedWheel.elements || [];
       setSegments(elements.map(element => ({ 
         id: element._id || element.id, 
-        name: element.label || element.name, 
+        label: element.label || element.name, 
         weight: element.weight || 1, 
         isActif: element.isActif !== false 
       })).sort((a, b) => {
@@ -299,7 +297,7 @@ const EditWheel = () => {
       const elements = updatedWheel.elements || [];
       setSegments(elements.map(element => ({ 
         id: element._id || element.id, 
-        name: element.label || element.name, 
+        label: element.label || element.name, 
         weight: element.weight || 1, 
         isActif: element.isActif !== false 
       })).sort((a, b) => {
@@ -649,7 +647,7 @@ const EditWheel = () => {
                       autoFocus
                     />
                   ) : (
-                    <span className="element-label">{segment.name}</span>
+                    <span className="element-label">{segment.label}</span>
                   )}
                 </div>
 
@@ -832,7 +830,7 @@ const EditWheel = () => {
                 return;
               }
               const segmentObjects = segments.filter(s => s.isActif !== false).map((segment) => ({
-                label: segment.name
+                label: segment.label
               }));
 
               setWheel({

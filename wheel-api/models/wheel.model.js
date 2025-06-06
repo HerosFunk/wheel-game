@@ -51,7 +51,6 @@ const wheelSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// CORRECTION: Ajouter la relation virtuelle pour les éléments
 wheelSchema.virtual('elements', {
     ref: 'Element',
     localField: '_id',

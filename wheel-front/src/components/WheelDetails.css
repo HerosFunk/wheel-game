@@ -121,7 +121,6 @@
     margin-bottom: 24px;
 }
 
-/* Nouveaux styles pour les contrôles de spin */
 .spin-controls {
     display: flex;
     flex-direction: column;
@@ -307,6 +306,23 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.element-card.will-be-removed {
+    opacity: 0.7;
+    position: relative;
+}
+
+.element-card.will-be-removed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 0, 0, 0.1);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
 .element-color-indicator {
     width: 20px;
     height: 20px;
@@ -321,6 +337,10 @@
     font-size: 1.75rem;
     word-break: break-word;
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 30px;
 }
 
 .element-details {
@@ -375,7 +395,6 @@
   display: none !important;
 }
 
-/* Nouveau tooltip amélioré - styles de base */
 .wheel-tooltip {
   position: fixed;
   background: linear-gradient(135deg, rgba(46, 48, 56, 0.95), rgba(52, 54, 60, 0.95));
@@ -404,7 +423,6 @@
   transform: translateY(0) scale(1);
 }
 
-/* Titre avec support multi-lignes */
 .wheel-tooltip-title {
   font-size: 1.3rem;
   font-weight: 700;
@@ -413,7 +431,7 @@
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  white-space: pre-line; /* Supporte \n pour les retours à la ligne */
+  white-space: pre-line;
   hyphens: auto;
   border-bottom: 2px solid rgba(255, 179, 0, 0.3);
   padding-bottom: 12px;
@@ -422,18 +440,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Support pour textes très longs */
   max-height: 120px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 179, 0, 0.5) transparent;
   
-  /* Gestion des longs textes sans espaces */
   word-break: break-all;
   overflow-wrap: anywhere;
 }
 
-/* Scrollbar pour les titres longs */
 .wheel-tooltip-title::-webkit-scrollbar {
   width: 4px;
 }
@@ -451,7 +466,6 @@
   background: rgba(255, 179, 0, 0.7);
 }
 
-/* Contenu du tooltip */
 .wheel-tooltip-content {
   display: flex;
   flex-direction: column;
@@ -488,7 +502,6 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Indicateur de couleur */
 .wheel-tooltip-color {
   display: flex;
   align-items: center;
@@ -524,7 +537,6 @@
   }
 }
 
-/* Animation d'entrée */
 @keyframes tooltipFadeIn {
   from {
     opacity: 0;
@@ -540,7 +552,6 @@
   animation: tooltipFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* État de chargement pour le tooltip */
 .wheel-tooltip.loading {
   opacity: 0.7;
 }
@@ -549,7 +560,6 @@
   opacity: 0.5;
 }
 
-/* Protection contre les débordements */
 .wheel-tooltip {
   max-height: 80vh;
   overflow-y: auto;
@@ -573,7 +583,6 @@
   background: rgba(255, 179, 0, 0.7);
 }
 
-/* Responsive pour mobile */
 @media (max-width: 768px) {
   .wheel-tooltip {
     position: fixed;
@@ -610,7 +619,6 @@
   }
 }
 
-/* Pour les très petits écrans */
 @media (max-width: 480px) {
   .wheel-tooltip {
     min-width: 250px;
@@ -623,7 +631,6 @@
   }
 }
 
-/* Support pour les textes RTL (Right-to-Left) */
 .wheel-tooltip[dir="rtl"] {
   text-align: right;
 }
@@ -883,7 +890,6 @@
     border-bottom: none;
 }
 
-/* Responsive design */
 @media (max-width: 900px) {
     .wheel-section-layout {
         gap: 16px;
@@ -968,5 +974,26 @@
         left: 10px;
         right: 10px;
         transform: none;
+    }
+}
+
+.remove-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 1.1em;
+    animation: pulse 2s infinite;
+    z-index: 1;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
     }
 }

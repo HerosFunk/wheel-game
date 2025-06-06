@@ -36,7 +36,7 @@ const CreateWheel = () => {
           setNameValue(data.name);
           setOptions({ option1: data.removeAfterSelection, infinitySpin: data.numberOfSpins === -1 });
           setSpinLimit(data.numberOfSpins === -1 ? "" : data.numberOfSpins);
-          setSegments(data.Elements.map(element => ({ name: element.label, weight: element.weight })));
+          setSegments(data.Elements.map(element => ({ label: element.label, weight: element.weight })));
         } catch (error) {
           console.error("Error fetching wheel:", error);
         }
@@ -106,7 +106,7 @@ const CreateWheel = () => {
     }
 
     const newSegment = {
-      name: segmentName,
+      label: segmentName,
       weight: weight
     };
 
@@ -139,19 +139,19 @@ const CreateWheel = () => {
       [option]: !prevOptions[option],
     }));
     if (option === "infinitySpin" && !options.infinitySpin) {
-      setSpinLimit(""); // Réinitialise le champ si l'utilisateur active à nouveau "Infinity Spin"
+      setSpinLimit("");
     }
   };
 
   const handleEditClick = (index) => {
     setEditingIndex(index);
-    setEditingValue(segments[index].name);
+    setEditingValue(segments[index].label);
   };
 
   const handleEditSave = (index) => {
     if (editingValue.trim()) {
       const updatedSegments = [...segments];
-      updatedSegments[index] = { ...updatedSegments[index], name: editingValue.trim() };
+      updatedSegments[index] = { ...updatedSegments[index], label: editingValue.trim() };
       setSegments(updatedSegments);
       setEditingIndex(null);
       setEditingValue("");
@@ -184,14 +184,11 @@ const CreateWheel = () => {
     name: nameValue,
     removeAfterSelection: options.option1,
     numberOfSpins: options.infinitySpin ? -1 : parseInt(spinLimit),
-    // CORRECTION: Changer 'elements' pour correspondre à ce que le backend attend
     elements: segments.map(segment => ({
-      name: segment.name,  // Le backend attend 'name' dans la boucle de création
+      label: segment.label,
       weight: segment.weight || 1
     }))
   };
-
-  console.log("Sending wheel data:", wheelData); // Debug
 
   try {
     const response = await fetch(wheelId ? `${API_URL}/wheels/${wheelId}` : `${API_URL}/wheels`, {
@@ -210,7 +207,6 @@ const CreateWheel = () => {
     }
 
     const createdWheel = await response.json();
-    console.log("Created wheel response:", createdWheel); // Debug
     navigate(`/wheel/${createdWheel.id || createdWheel._id}`);
   } catch (error) {
     console.error("Full error:", error);
@@ -356,8 +352,8 @@ const CreateWheel = () => {
                 outline: 'none',
                 width: '100%',
                 '&::placeholder': {
-                  color: '#a0a0a0',
-                  opacity: 0.7,
+                  color: '#FFFFFF',
+                  opacity: 0,
                   fontStyle: 'italic'
                 }
               }}
@@ -488,7 +484,7 @@ const CreateWheel = () => {
                       autoFocus
                     />
                   ) : (
-                    <span className="element-label">{segment.name}</span>
+                    <span className="element-label">{segment.label}</span>
                   )}
                 </div>
 
@@ -630,7 +626,7 @@ const CreateWheel = () => {
                 return;
               }
               const segmentObjects = segments.map((segment) => ({
-                label: segment.name
+                label: segment.label
               }));
 
               setWheel({

@@ -9,8 +9,6 @@ const resultService = require("../services/result.service");
 exports.createWheel = async (req, res) => {
 	const { name, removeAfterSelection, numberOfSpins, elements } = req.body;
 
-	console.log("Received createWheel request:", req.body);
-
 	if (!name || numberOfSpins === undefined) {
 		return res.status(400).send({ error: "Missing required fields: name, numberOfSpins" });
 	}
@@ -34,21 +32,17 @@ exports.createWheel = async (req, res) => {
 			totalSpinsCount: 0,
 		});
 
-		console.log("Created wheel:", wheel);
-
 		const createdElements = [];
 		for (let i = 0; i < elements.length; i++) {
 			const element = elements[i];
-			console.log(`Creating element ${i + 1}:`, element);
 
 			const createdElement = await Element.create({
-				label: element.name,
+				label: element.label,
 				wheel: wheel._id,
 				weight: element.weight || 1,
 				isActif: true,
 			});
 
-			console.log("Created element:", createdElement);
 			createdElements.push(createdElement);
 		}
 
@@ -56,9 +50,6 @@ exports.createWheel = async (req, res) => {
 			path: "elements",
 			model: "Element",
 		});
-
-		console.log("Complete wheel with elements:", completeWheel);
-		console.log("Elements found:", completeWheel.elements.length);
 
 		try {
 			socketIO.emitToAll("wheel:created", { wheel: completeWheel });
@@ -103,17 +94,9 @@ exports.getWheels = async (req, res) => {
 			sortOptions.createdAt = -1;
 		}
 
-		console.log("Query:", query);
-		console.log("Sort options:", sortOptions);
-
 		const wheels = await Wheel.find(query).sort(sortOptions).populate({
 			path: "elements",
 			model: "Element",
-		});
-
-		console.log(`Found ${wheels.length} wheels`);
-		wheels.forEach((wheel) => {
-			console.log(`Wheel "${wheel.name}" has ${wheel.elements.length} elements`);
 		});
 
 		return res.status(200).send(wheels);
@@ -124,7 +107,6 @@ exports.getWheels = async (req, res) => {
 };
 
 exports.getWheel = async (req, res) => {
-	console.log("getWheel called with id:", req.params.id);
 
 	const { id } = req.params;
 
@@ -141,9 +123,6 @@ exports.getWheel = async (req, res) => {
 		if (!wheel) {
 			return res.status(404).send({ error: "Wheel not found" });
 		}
-
-		console.log("Found wheel:", wheel.name);
-		console.log("Elements count:", wheel.elements.length);
 
 		return res.status(200).send(wheel);
 	} catch (error) {
@@ -344,13 +323,6 @@ exports.updateWheel = async (req, res) => {
   const { id } = req.params;
   const { name, removeAfterSelection, numberOfSpins, elements } = req.body;
 
-  console.log("updateWheel - Received data:", {
-    id,
-    name,
-    removeAfterSelection,
-    numberOfSpins,
-    elementsCount: elements?.length
-  });
 
   if (!name || numberOfSpins === undefined || !elements || elements.length === 0) {
     return res.status(400).json({ 
@@ -374,22 +346,14 @@ exports.updateWheel = async (req, res) => {
     wheel.numberOfSpinsLeft = numberOfSpins;
     await wheel.save();
 
-    console.log("Wheel updated successfully");
 
     const existingElements = await Element.find({ wheel: id });
-    const existingElementIds = existingElements.map(el => el._id.toString());
-    
-    console.log("Existing elements:", existingElementIds.length);
+    const existingElementIds = existingElements.map(el => el._id.toString());  
 
     const processedElementIds = [];
     
     for (let i = 0; i < elements.length; i++) {
       const elementData = elements[i];
-      console.log(`Processing element ${i + 1}:`, {
-        hasId: !!elementData._id,
-        label: elementData.label,
-        weight: elementData.weight
-      });
 
       if (!elementData.label || elementData.label.trim() === '') {
         return res.status(400).json({ 
@@ -399,7 +363,6 @@ exports.updateWheel = async (req, res) => {
       }
 
       if (elementData._id && existingElementIds.includes(elementData._id)) {
-        console.log(`Updating existing element: ${elementData._id}`);
         
         const updatedElement = await Element.findByIdAndUpdate(
           elementData._id, 
@@ -416,7 +379,6 @@ exports.updateWheel = async (req, res) => {
           processedElementIds.push(elementData._id);
         }
       } else {
-        console.log(`Creating new element: ${elementData.label}`);
         
         const newElement = await Element.create({
           label: elementData.label.trim(),
@@ -434,7 +396,6 @@ exports.updateWheel = async (req, res) => {
     );
     
     if (elementsToDelete.length > 0) {
-      console.log(`Deleting ${elementsToDelete.length} removed elements`);
       await Element.deleteMany({ _id: { $in: elementsToDelete } });
     }
 
@@ -443,8 +404,6 @@ exports.updateWheel = async (req, res) => {
       model: 'Element'
     });
     
-    console.log(`Update complete. Wheel has ${updatedWheel.elements.length} elements`);
-
     try {
       socketIO.emitToRoom(`wheel:${id}`, 'wheel:updated', { wheel: updatedWheel });
     } catch (socketError) {

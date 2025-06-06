@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import { ToastContainer, toast } from "react-toastify";
@@ -77,12 +77,10 @@ const createColorVariations = (baseColor) => {
 	return { light, dark, alpha, original: baseColor };
 };
 
-// Composant Tooltip amélioré avec support multi-lignes
 const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, elements }) => {
 	const [tooltipStyle, setTooltipStyle] = useState({});
 	const tooltipRef = useRef(null);
 
-	// Fonction pour formater le texte sur plusieurs lignes
 	const formatMultilineText = useCallback((text, maxCharsPerLine = 25) => {
 		if (!text || text.length <= maxCharsPerLine) {
 			return text;
@@ -101,7 +99,6 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 					lines.push(currentLine);
 					currentLine = word;
 				} else {
-					// Si un seul mot est trop long, le couper intelligemment
 					if (word.length > maxCharsPerLine) {
 						lines.push(word.substring(0, maxCharsPerLine - 3) + '...');
 						currentLine = '';
@@ -119,7 +116,6 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 		return lines.join('\n');
 	}, []);
 
-	// Calculer la position optimale du tooltip
 	useEffect(() => {
 		if (!isVisible || !element || !mousePosition || !tooltipRef.current) {
 			return;
@@ -138,37 +134,29 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 			transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
 		};
 
-		// Position horizontale
 		const spaceRight = viewportWidth - mousePosition.x;
 		const spaceLeft = mousePosition.x;
 		
 		if (spaceRight >= tooltipRect.width + 20) {
-			// Placer à droite
 			newStyle.left = mousePosition.x + 15;
 			newStyle.transformOrigin = 'left center';
 		} else if (spaceLeft >= tooltipRect.width + 20) {
-			// Placer à gauche
 			newStyle.right = viewportWidth - mousePosition.x + 15;
 			newStyle.transformOrigin = 'right center';
 		} else {
-			// Centrer horizontalement
 			newStyle.left = '50%';
 			newStyle.transform = 'translateX(-50%) translateY(0) scale(1)';
 			newStyle.transformOrigin = 'center center';
 		}
 
-		// Position verticale
 		const spaceBelow = viewportHeight - mousePosition.y;
 		const spaceAbove = mousePosition.y;
 		
 		if (spaceBelow >= tooltipRect.height + 20) {
-			// Placer en dessous
 			newStyle.top = mousePosition.y + 15;
 		} else if (spaceAbove >= tooltipRect.height + 20) {
-			// Placer au dessus
 			newStyle.bottom = viewportHeight - mousePosition.y + 15;
 		} else {
-			// Centrer verticalement
 			newStyle.top = '50%';
 			if (newStyle.transform) {
 				newStyle.transform = 'translateX(-50%) translateY(-50%) scale(1)';
@@ -205,8 +193,8 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 			<div 
 				className="wheel-tooltip-title"
 				style={{
-					whiteSpace: 'pre-line', // Permet les retours à la ligne avec \n
-					wordBreak: 'break-word'  // Coupe les mots trop longs
+					whiteSpace: 'pre-line',
+					wordBreak: 'break-word'
 				}}
 			>
 				{formattedTitle}
@@ -256,7 +244,6 @@ const WheelDetails = () => {
 	const [showResultsModal, setShowResultsModal] = useState(false);
 	const [recentResults, setRecentResults] = useState([]);
 	
-	// Nouveaux states pour le tooltip amélioré
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 	const [showTooltip, setShowTooltip] = useState(false);
 
@@ -318,13 +305,28 @@ const WheelDetails = () => {
 		}
 	};
 
-	// Gestionnaire pour l'hover d'élément avec tooltip amélioré
 	const handleElementHover = useCallback((element) => {
-		setHoveredElement(element);
-		setShowTooltip(!!element);
-	}, []);
+		if (!element) {
+			setHoveredElement(null);
+			setShowTooltip(false);
+			return;
+		}
 
-	// Gestionnaire de mouvement de souris pour positionner le tooltip
+		const isLastSelectedElement = selectedElement && 
+			element._id === selectedElement._id;
+
+		if (wheel && wheel.removeAfterSelection && isLastSelectedElement) {
+			setHoveredElement({
+				...element,
+				label: `${element.label} (Will be removed)`,
+				isActif: false
+			});
+		} else {
+			setHoveredElement(element);
+		}
+		setShowTooltip(!!element);
+	}, [wheel, selectedElement]);
+
 	const handleMouseMove = useCallback((event) => {
 		setMousePosition({
 			x: event.clientX,
@@ -332,7 +334,6 @@ const WheelDetails = () => {
 		});
 	}, []);
 
-	// Gestionnaire pour quitter l'hover
 	const handleMouseLeave = useCallback(() => {
 		setHoveredElement(null);
 		setShowTooltip(false);
@@ -437,9 +438,8 @@ const WheelDetails = () => {
 			masterGain.gain.setValueAtTime(0.4, audioContext.currentTime);
 			
 			const currentTime = audioContext.currentTime;
-			const duration = 4; // Durée totale du son
+			const duration = 4;
 			
-			// 🎵 Son principal : effet "whoosh" rotatif
 			const createWhooshSound = () => {
 				const oscillator = audioContext.createOscillator();
 				const gain = audioContext.createGain();
@@ -466,9 +466,8 @@ const WheelDetails = () => {
 				oscillator.stop(currentTime + duration);
 			};
 			
-			// 🎪 Son secondaire : clics rythmés (comme une roue qui tourne)
 			const createTickingSound = () => {
-				const tickCount = 20; // Nombre de clics
+				const tickCount = 20;
 				for (let i = 0; i < tickCount; i++) {
 					const tickTime = currentTime + (i * duration / tickCount);
 					const oscillator = audioContext.createOscillator();
@@ -489,7 +488,6 @@ const WheelDetails = () => {
 				}
 			};
 			
-			// 🎊 Son d'effet : montée dramatique
 			const createDramaticRise = () => {
 				const oscillator = audioContext.createOscillator();
 				const gain = audioContext.createGain();
@@ -515,7 +513,6 @@ const WheelDetails = () => {
 				oscillator.stop(currentTime + duration);
 			};
 			
-			// 🎆 Son final : "ding" de fin
 			const createEndDing = () => {
 				setTimeout(() => {
 					const oscillator = audioContext.createOscillator();
@@ -533,10 +530,9 @@ const WheelDetails = () => {
 					
 					oscillator.start(currentTime + duration - 0.3);
 					oscillator.stop(currentTime + duration + 0.5);
-				}, 3700); // Délai pour synchroniser avec la fin du spin
+				}, 3700);
 			};
 			
-			// Jouer tous les sons ensemble
 			createWhooshSound();
 			createTickingSound();
 			createDramaticRise();
@@ -548,27 +544,53 @@ const WheelDetails = () => {
 	};
 
 	const handleSpin = async () => {
-		console.log("handleSpin called, mustSpin:", mustSpin, "canSpin:", canSpin);
-
 		if (mustSpin || !wheel || spinsLeft === "0") {
-			console.log("Spin blocked - mustSpin:", mustSpin, "wheel:", !!wheel, "spinsLeft:", spinsLeft);
 			return;
 		}
 
 		try {
-			console.log("Starting spin...");
 			setShowConfetti(false);
-
+			
+			if (wheel.removeAfterSelection && selectedElement) {
+				const updatedElements = wheel.elements.filter(
+					(element) => element._id !== selectedElement._id
+				);
+				setWheel({
+					...wheel,
+					elements: updatedElements.filter((element) => element.isActif === true),
+				});
+			}
+			
+			setSelectedElement(null);
 			playSpinSound();
-
 			setMustSpin(true);
 
 			const response = await spinWheel(wheelId);
-			console.log("API response:", response);
 
 			if (response.data) {
 				if (wheel.numberOfSpins !== -1) {
-					setSpinsLeft((prev) => (prev === "Unlimited" ? "Unlimited" : Math.max(0, parseInt(prev) - 1)));
+					const currentSpins = parseInt(spinsLeft);
+					if (!isNaN(currentSpins)) {
+						setSpinsLeft(Math.max(0, currentSpins - 1).toString());
+					} else {
+						setSpinsLeft(wheel.numberOfSpins.toString());
+					}
+				} else {
+					setSpinsLeft("Unlimited");
+				}
+
+				if (response.data.resultDetails) {
+					const newSelectedElement = {
+						_id: response.data.result,
+						label: response.data.resultDetails.label,
+						weight: response.data.resultDetails.weight,
+						color: wheel.elements.find(el => el._id === response.data.result)?.color
+					};
+					setSelectedElement(newSelectedElement);
+				}
+
+				if (response.data.dernierResultat) {
+					setLastResult(response.data.dernierResultat);
 				}
 
 				await loadRecentResults();
@@ -581,8 +603,9 @@ const WheelDetails = () => {
 	};
 
 	const handleSpinEnd = (element) => {
+		if (!element) return;
+		
 		setMustSpin(false);
-		setSelectedElement(element);
 		setShowConfetti(true);
 
 		setTimeout(() => {
@@ -630,8 +653,24 @@ const WheelDetails = () => {
 		});
 	};
 
+	useEffect(() => {
+		if (wheel) {
+			setSpinsLeft(wheel.numberOfSpins === -1 ? "Unlimited" : wheel.numberOfSpins.toString());
+		}
+	}, [wheel]);
+
+	const activeElements = useMemo(() => {
+		return wheel ? wheel.elements.filter(element => element.isActif) : [];
+	}, [wheel]);
+
+	useEffect(() => {
+		if (wheel) {
+			setSelectedElement(null);
+		}
+	}, [wheel]);
+
 	if (isLoading) {
-		return <div className="loading">Chargement...</div>;
+		return <div className="loading">Loading...</div>;
 	}
 
 	if (errorMessage) {
@@ -693,7 +732,7 @@ const WheelDetails = () => {
 					onMouseLeave={handleMouseLeave}
 				>
 					<CustomWheel
-						elements={wheel.elements.filter((el) => el.isActif)}
+						elements={activeElements}
 						onSpinEnd={handleSpinEnd}
 						onSpinStart={handleSpinStart}
 						isSpinning={mustSpin}
@@ -701,9 +740,11 @@ const WheelDetails = () => {
 						spinSpeed={10}
 						wheelSize={500}
 						borderWidth={0}
-						customColors={wheel.elements.filter((el) => el.isActif).map((element) => element.color)}
+						customColors={activeElements.map((element) => element.color)}
 						disabled={wheelDisabled}
 						onElementHover={handleElementHover}
+						selectedElement={selectedElement}
+						result={selectedElement}
 					/>
 				</div>
 
@@ -728,7 +769,7 @@ const WheelDetails = () => {
 					)}
 				</div>
 
-				{selectedElement && (
+				{selectedElement && !mustSpin && (
 					<div
 						className="selected-element-display"
 						style={{
@@ -754,7 +795,6 @@ const WheelDetails = () => {
 				)}
 			</div>
 
-			{/* Tooltip amélioré avec support multi-lignes */}
 			<EnhancedTooltip
 				element={hoveredElement}
 				mousePosition={mousePosition}
@@ -788,50 +828,62 @@ const WheelDetails = () => {
 				<div className="elements-grid">
 					{wheel.elements
 						.filter((el) => el.isActif)
-						.map((element, index) => (
-							<div
-								key={element._id || element.id}
-								className={`element-card ${
-									hoveredElement?.id === element.id || hoveredElement?._id === element._id ? "highlighted" : ""
-								}`}
-								style={{
-									borderLeft: `6px solid ${element.color || "#ccc"}`,
-									backgroundColor: `${element.color}15`,
-									boxShadow:
-										hoveredElement?.id === element.id || hoveredElement?._id === element._id
-											? `0 8px 24px ${element.color}40, 0 0 0 2px ${element.color}80`
-											: "0 2px 8px rgba(0, 0, 0, 0.1)",
-									transform:
-										hoveredElement?.id === element.id || hoveredElement?._id === element._id
-											? "translateY(-4px) scale(1.02)"
-											: "translateY(0) scale(1)",
-								}}
-								onMouseEnter={() => setHoveredElement(element)}
-								onMouseLeave={() => setHoveredElement(null)}
-							>
-								<div className="element-header">
-									<div className="element-color-indicator" style={{ backgroundColor: element.color || "#ccc" }}></div>
-									<span className="element-label">{element.label}</span>
-								</div>
-
-								<div className="element-details">
-									<div className="element-weight">
-										<span className="detail-label">Weight:</span>
-										<span className="detail-value">{element.weight}</span>
-									</div>
-									<div className="element-probability">
-										<span className="detail-label">Probability:</span>
-										<span className="detail-value">
-											{calculateProbability(
-												element.weight,
-												wheel.elements.filter((el) => el.isActif)
+						.map((element, index) => {
+							const isSelected = selectedElement && element._id === selectedElement._id;
+							const willBeRemoved = wheel.removeAfterSelection && isSelected;
+							
+							return (
+								<div
+									key={element._id || element.id}
+									className={`element-card ${
+										hoveredElement?.id === element.id || hoveredElement?._id === element._id ? "highlighted" : ""
+									} ${willBeRemoved ? "will-be-removed" : ""}`}
+									style={{
+										borderLeft: `6px solid ${element.color || "#ccc"}`,
+										backgroundColor: `${element.color}15`,
+										boxShadow:
+											hoveredElement?.id === element.id || hoveredElement?._id === element._id
+												? `0 8px 24px ${element.color}40, 0 0 0 2px ${element.color}80`
+												: "0 2px 8px rgba(0, 0, 0, 0.1)",
+										transform:
+											hoveredElement?.id === element.id || hoveredElement?._id === element._id
+												? "translateY(-4px) scale(1.02)"
+												: "translateY(0) scale(1)",
+									}}
+									onMouseEnter={() => setHoveredElement(element)}
+									onMouseLeave={() => setHoveredElement(null)}
+								>
+									<div className="element-header">
+										<div className="element-color-indicator" style={{ backgroundColor: element.color || "#ccc" }}></div>
+										<span className="element-label">
+											{element.label}
+											{willBeRemoved && (
+												<span className="remove-icon" title="Will be removed">
+													🗑️
+												</span>
 											)}
-											%
 										</span>
 									</div>
+
+									<div className="element-details">
+										<div className="element-weight">
+											<span className="detail-label">Weight:</span>
+											<span className="detail-value">{element.weight}</span>
+										</div>
+										<div className="element-probability">
+											<span className="detail-label">Probability:</span>
+											<span className="detail-value">
+												{calculateProbability(
+													element.weight,
+													wheel.elements.filter((el) => el.isActif)
+												)}
+												%
+											</span>
+										</div>
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 				</div>
 			</div>
 
@@ -848,7 +900,7 @@ const WheelDetails = () => {
 				</div>
 			)}
 
-			{showConfetti && selectedElement && (
+			{showConfetti && selectedElement && !mustSpin && (
 				<div className="result-overlay" onClick={() => setShowConfetti(false)} style={{ cursor: "pointer" }}>
 					<div className="result-content" onClick={(e) => e.stopPropagation()}>
 						<h2>Result</h2>

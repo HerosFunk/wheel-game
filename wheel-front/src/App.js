@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import AppRoutes from "./Routes";
@@ -57,7 +56,6 @@ function App() {
 
         var now = new Date();
         var time = now.getTime();
-         // dans 10 heures
         var expireTime = time  + 10*3600*1000;
         now.setTime(expireTime);
         document.cookie = "isAuthenticated=true;expires=" + now.toUTCString() + ";path=/";

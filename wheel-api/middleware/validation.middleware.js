@@ -15,7 +15,6 @@ const validateWheel = (req, res, next) => {
         return next(new AppError('La roue doit contenir au moins un élément', 400));
     }
 
-    // Validation des éléments
     for (const element of elements) {
         if (!element.label || element.label.trim().length === 0) {
             return next(new AppError('Chaque élément doit avoir un nom', 400));

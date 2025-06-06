@@ -1,4 +1,3 @@
-/* ResultsDisplay.css - Design moderne avec glassmorphism */
 
 .results-overlay {
   position: fixed;
@@ -86,27 +85,16 @@
 }
 
 .close-button {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   font-size: 1.8rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   font-weight: 300;
-}
-
-.close-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: rotate(90deg) scale(1.1);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .results-tabs {
@@ -224,7 +212,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Section Headers */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -282,7 +269,6 @@
   box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
 }
 
-/* Results List - Design sombre cohérent */
 .results-list {
   display: flex;
   flex-direction: column;
@@ -383,7 +369,6 @@
   font-size: 0.9rem;
 }
 
-/* Statistics Overview */
 .stats-overview {
   margin-bottom: 32px;
 }
@@ -442,7 +427,6 @@
   font-weight: 600;
 }
 
-/* Element Statistics - Design sombre cohérent */
 .element-stats {
   display: flex;
   flex-direction: column;
@@ -550,7 +534,6 @@
   border: 1px solid rgba(116, 185, 255, 0.3);
 }
 
-/* Analytics Section */
 .analytics-section {
   display: flex;
   flex-direction: column;
@@ -575,7 +558,6 @@
   font-style: italic;
 }
 
-/* Filters */
 .filters-container {
   display: flex;
   flex-wrap: wrap;
@@ -609,7 +591,6 @@
   background: rgba(255, 255, 255, 1);
 }
 
-/* Load More */
 .load-more-button {
   width: 100%;
   padding: 16px 24px;
@@ -652,7 +633,6 @@
   transform: none;
 }
 
-/* No Results */
 .no-results {
   text-align: center;
   padding: 48px 24px;
@@ -676,7 +656,6 @@
   opacity: 0.5;
 }
 
-/* Timeline */
 .timeline-container {
   position: relative;
   padding: 20px 0;
@@ -709,7 +688,6 @@
   box-shadow: 0 0 0 4px rgba(255, 179, 0, 0.2);
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .results-modal {
     width: 98%;
@@ -828,7 +806,6 @@
   }
 }
 
-/* Animations pour les nouvelles entrées */
 .result-item.new-entry {
   animation: slideInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -844,7 +821,6 @@
   }
 }
 
-/* Animation pour les barres de statistiques */
 .stats-fill[data-animate="true"] {
   animation: growBar 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }

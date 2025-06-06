@@ -9,8 +9,8 @@ const Footer = () => {
             textAlign: "center",
             backgroundColor: "black",
             color: "white",
-            padding: "10px",
-            fontSize: "0.5em",
+            padding: "5px",
+            fontSize: "0.75em",
         }}>
         <p>Made by Léo</p>
         </footer>
