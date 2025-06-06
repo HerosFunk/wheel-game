@@ -9,21 +9,23 @@ import { getWheel, spinWheel, updateElementStatus, setAllElementsActive, resetRe
 import './WheelDetails.css';
 import io from 'socket.io-client';
 
-const notify = () => toast("Link copied!");
+  const notify = () => toast("Link copied!");
 const API_URL = "https://wheel-game.azurewebsites.net";
 
-const colorPalette = ["#ff69b4", "purple", "#87CEEB"]; // Palette des couleurs
+const colorPalette = [
+  "#ff69b4", "#e74c3c", "#9b59b6", "#3498db", "#1abc9c", "#2ecc71",
+  "#f39c12", "#e67e22", "#34495e", "#95a5a6", "#fd79a8", "#6c5ce7",
+  "#74b9ff", "#00b894", "#fdcb6e", "#e17055", "#81ecec", "#a29bfe",
+  "#ffeaa7", "#fab1a0", "#ff7675", "#55a3ff", "#fd79a8", "#fdcb6e"
+]; // Palette étendue avec plus de couleurs variées
 
 const assignColors = (elements, colorPalette) => {
-  let lastColor = null;
-  return elements.map((element) => {
-    const availableColors = colorPalette.filter((color) => color !== lastColor);
-    const assignedColor =
-      availableColors[Math.floor(Math.random() * availableColors.length)];
-    lastColor = assignedColor;
+  return elements.map((element, index) => {
+    // Utiliser l'index pour choisir une couleur de façon cyclique
+    const colorIndex = index % colorPalette.length;
     return {
       ...element,
-      color: assignedColor,
+      color: colorPalette[colorIndex],
     };
   });
 };
@@ -40,30 +42,14 @@ const WheelDetails = () => {
   const [spinsLeft, setSpinsLeft] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [prizeNumber, setPrizeNumber] = useState(-999);
-  const [mustSpin, setMustSpin] = useState(false);
+  const [mustSpin, setMustSpin] = useState(false); // État pour contrôler le spin
   const [results, setResults] = useState([]);
   const [isSocketReady, setIsSocketReady] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Nouvel état pour la modal
-  const [isWheelVisible, setIsWheelVisible] = useState(false);
-  const [isAutoFullscreen, setIsAutoFullscreen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedElement, setSelectedElement] = useState(null);
   const [socket, setSocket] = useState(null);
   const [lastResult, setLastResult] = useState(null);
-
-  const toggleWheelVisibility = () => {
-    setIsWheelVisible((prev) => !prev);
-  };
-
-  const toggleIsAutoFullscreen = () => {
-    if (mustSpin) return;
-    console.log("Toggling Auto Fullscreen, current state:", isAutoFullscreen);
-    setIsAutoFullscreen((prev) => {
-      console.log("New Auto Fullscreen state:", !prev);
-      return !prev;
-    });
-  };
+  const [hoveredElement, setHoveredElement] = useState(null); // Nouvel état pour l'élément survolé
 
   const userRole = Cookies.get("role") || ""; // Récupérer le rôle depuis le cookie
 
@@ -71,7 +57,14 @@ const WheelDetails = () => {
     try {
       setIsLoading(true);
       const data = await getWheel(wheelId);
-      setWheel(data);
+      
+      // Assigner des couleurs aux éléments s'ils n'en ont pas
+      const elementsWithColors = assignColors(data.elements || [], colorPalette);
+      
+      setWheel({
+        ...data,
+        elements: elementsWithColors
+      });
       setSpinsLeft(data.numberOfSpinsLeft === -1 ? "Unlimited" : data.numberOfSpinsLeft.toString());
       setIsSocketReady(true); // Les données sont prêtes, autoriser les sockets
     } catch (error) {
@@ -154,12 +147,8 @@ const WheelDetails = () => {
           }
           
           console.log(indexElementSelected);
-          setPrizeNumber(indexElementSelected);
-          // si le mode plein ecran n'est pas activé, l'activer
-          console.log(wheel.elements[indexElementSelected].label);
-          setTimeout(function(){
-            setMustSpin(true);
-        }, 500);
+          // Déclencher le spin visuel
+          setMustSpin(true);
           console.log("spiiiiiin");
 
           if (data.numberOfSpins === -1) {
@@ -201,25 +190,26 @@ const WheelDetails = () => {
         socket.off('element:statusUpdated');
       };
     }
-  }, [isAutoFullscreen, isModalOpen, isSocketReady, spinsLeft, userRole, wheel, socket]);
+  }, [isSocketReady, spinsLeft, userRole, wheel, socket]);
 
   const handleSpin = async () => {
     if (mustSpin || !wheel || spinsLeft === "0") return;
 
     try {
-      setMustSpin(true);
       setShowConfetti(false);
+      // Appeler l'API pour faire tourner la roue
       await spinWheel(wheelId);
+      // L'événement socket déclenchera le spin visuel
       fetchWheel(); // Rafraîchir les données de la roue
     } catch (error) {
       setErrorMessage("Erreur lors de la rotation de la roue");
       console.error("Erreur:", error);
-    } finally {
-      setMustSpin(false);
     }
   };
 
   const handleSpinEnd = (element) => {
+    console.log("Spin ended, selected element:", element);
+    setMustSpin(false); // Arrêter le spin
     setSelectedElement(element);
     setShowConfetti(true);
   };
@@ -260,11 +250,11 @@ const WheelDetails = () => {
     }
   };
 
-  const splitTextIntoLines = (text, maxCharsPerLine) => {
-    if (text.length <= maxCharsPerLine) return text;
-    const cutIndex = text.indexOf(" ", maxCharsPerLine);
-    if (cutIndex === -1) return text;
-    return `${text.substring(0, cutIndex)}...`;
+  const copyToClipboard = () => {
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      notify();
+    });
   };
 
   if (isLoading) {
@@ -279,9 +269,12 @@ const WheelDetails = () => {
     );
   }
 
-  if (!wheel) {
-    return <div className="error-message">Roue non trouvée</div>;
+  if (!wheel || !wheel.elements || wheel.elements.length === 0) {
+    return <div className="error-message">Roue non trouvée ou aucun élément</div>;
   }
+
+  // Vérifier si l'utilisateur peut faire tourner la roue
+  const canSpin = spinsLeft !== "0" && !mustSpin && wheel.elements.some(el => el.isActif);
 
   return (
     <div className="WheelDetails">
@@ -299,45 +292,71 @@ const WheelDetails = () => {
           {wheel.numberOfSpins === -1 ? "Unlimited" : wheel.numberOfSpins}
         </p>
         <p>
-          <strong>Remaining Spins:</strong> {spinsLeft}
+          <strong>Remaining Spins:</strong> {spinsLeft === "Unlimited" ? "Unlimited" : spinsLeft}
         </p>
         <p>
           <strong>Remove After Selection:</strong>{" "}
-          {wheel.removeAfterSelection
-            ? "Yes"
-            : "No"}
+          {wheel.removeAfterSelection ? "Yes" : "No"}
         </p>
       </div>
 
       <div className="wheel-section-layout">
         <div className="wheel-container">
           <CustomWheel
-            elements={wheel.elements}
+            elements={wheel.elements.filter(el => el.isActif)} // Seulement les éléments actifs
             onSpinEnd={handleSpinEnd}
             onSpinStart={handleSpinStart}
             isSpinning={mustSpin}
             spinDuration={5}
             spinSpeed={10}
-            wheelSize={600}
-            customColors={wheel.elements.map(element => element.color)}
-            disabled={wheel.numberOfSpinsLeft === 0}
-            selectedElement={selectedElement}
+            wheelSize={500} // Réduit de 600 à 500
+            borderWidth={0} // Suppression complète du border
+            customColors={wheel.elements.filter(el => el.isActif).map(element => element.color)}
+            disabled={!canSpin}
+            onElementHover={setHoveredElement}
           />
         </div>
+        
+        {/* Bouton SPIN */}
+        <div className="spin-controls">
+          <button 
+            className={`spin-button-large ${!canSpin ? 'disabled' : ''}`}
+            onClick={handleSpin}
+            disabled={!canSpin}
+          >
+            {mustSpin ? 'SPINNING...' : 'SPIN'}
+          </button>
+          
+          {!canSpin && spinsLeft === "0" && (
+            <p className="no-spins-message">No more spins available</p>
+          )}
+          
+          {!canSpin && !wheel.elements.some(el => el.isActif) && (
+            <p className="no-active-elements">No active elements</p>
+          )}
+        </div>
+
         {selectedElement && (
           <div className="selected-element-display">
-            <h2>Élément sélectionné</h2>
+            <h2>Selected Element</h2>
             <div className="selected-element-label">
               {selectedElement.label}
             </div>
           </div>
         )}
-        </div>
+      </div>
+
+      {/* Bouton pour copier le lien */}
+      <div className="copy-link-button">
+        <button className="copyButton" onClick={copyToClipboard}>
+          Copy Wheel Link
+        </button>
+      </div>
 
       {/* Historique des résultats */}
       {results && results.length > 0 && (
         <div className="results-history">
-          <h3>Historique des résultats</h3>
+          <h3>Results History</h3>
           <ul>
             {results.slice().reverse().map((res, idx) => (
               <li key={idx}>{res.label}</li>
@@ -347,29 +366,75 @@ const WheelDetails = () => {
       )}
 
       <div className="elements-list">
-        <h3>Éléments</h3>
-        {wheel.elements.map((element) => (
-          <div 
-            key={element._id} 
-            className={`element-item${!element.isActif ? ' disabled' : ''}`}
-            title={element.label.length > 32 ? element.label : ''}
-          >
-            <span className="element-label">
-              {element.label.length > 32 ? element.label.slice(0, 30) + '…' : element.label}
-            </span>
-            <span className={`element-status ${element.isActif ? 'active' : 'inactive'}`}
-              title={element.isActif ? 'Actif' : 'Inactif'}
+        <h3>Wheel Elements</h3>
+        <div className="elements-grid">
+          {wheel.elements.filter(el => el.isActif).map((element, index) => (
+            <div 
+              key={element._id || element.id} 
+              className={`element-card ${hoveredElement?.id === element.id ? 'highlighted' : ''}`}
+              style={{
+                borderLeft: `6px solid ${element.color || '#ccc'}`,
+                backgroundColor: `${element.color}15`
+              }}
+              onMouseEnter={() => setHoveredElement(element)}
+              onMouseLeave={() => setHoveredElement(null)}
             >
-              {element.isActif ? '●' : '○'}
-            </span>
-          </div>
-        ))}
+              <div className="element-header">
+                <div 
+                  className="element-color-indicator"
+                  style={{ backgroundColor: element.color || '#ccc' }}
+                ></div>
+                <span className="element-label">
+                  {element.label}
+                </span>
+              </div>
+              
+              <div className="element-details">
+                <div className="element-weight">
+                  <span className="detail-label">Weight:</span>
+                  <span className="detail-value">{element.weight}</span>
+                </div>
+                <div className="element-probability">
+                  <span className="detail-label">Probability:</span>
+                  <span className="detail-value">{calculateProbability(element.weight, wheel.elements.filter(el => el.isActif))}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Tooltip for hovered element */}
+      {hoveredElement && (
+        <div className="hover-tooltip">
+          <h4>{hoveredElement.label}</h4>
+          <p><strong>Weight:</strong> {hoveredElement.weight}</p>
+          <p><strong>Probability:</strong> {calculateProbability(hoveredElement.weight, wheel.elements.filter(el => el.isActif))}%</p>
+        </div>
+      )}
+
+      {/* Contrôles administrateur */}
+      {userRole === "creator" && (
+        <div className="admin-controls">
+          <h3>Administrator Controls</h3>
+          <div className="admin-buttons">
+            <button className="control-button" onClick={handleActivateAll}>
+              Reactivate All Elements
+            </button>
+            <button className="control-button" onClick={handleReset}>
+              Reset Results
+            </button>
+            <button className="control-button" onClick={() => navigate(`/edit-wheel/${wheelId}`)}>
+              Edit Wheel
+            </button>
+          </div>
+        </div>
+      )}
 
       {showConfetti && selectedElement && (
         <div className="result-overlay">
           <div className="result-content">
-            <h2>Résultat</h2>
+            <h2>Result</h2>
             <p>{selectedElement.label}</p>
           </div>
         </div>
@@ -377,10 +442,12 @@ const WheelDetails = () => {
 
       {lastResult && (
         <div className="last-result">
-          <h3>Dernier résultat</h3>
-          <p>{wheel.elements.find(e => e._id === lastResult)?.label}</p>
-      </div>
+          <h3>Last Result</h3>
+          <p>{wheel.elements.find(e => e._id === lastResult || e.id === lastResult)?.label}</p>
+        </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 };
