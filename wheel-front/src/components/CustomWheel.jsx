@@ -180,6 +180,43 @@ const CustomWheel = ({
         }
     }, [isSpinning, isInternalAnimating, lastSpinComplete, onElementHover]);
 
+    // Fonction pour formater le texte du tooltip sur plusieurs lignes
+    const formatTooltipText = useCallback((text, maxCharsPerLine = 25) => {
+        if (!text || text.length <= maxCharsPerLine) {
+            return [text];
+        }
+        
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        for (let word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            if (testLine.length <= maxCharsPerLine) {
+                currentLine = testLine;
+            } else {
+                if (currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    // Si un seul mot est trop long, le couper
+                    if (word.length > maxCharsPerLine) {
+                        lines.push(word.substring(0, maxCharsPerLine - 3) + '...');
+                        currentLine = '';
+                    } else {
+                        currentLine = word;
+                    }
+                }
+            }
+        }
+        
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        
+        return lines;
+    }, []);
+
     const drawWheelOnly = useCallback((ctx, rotation) => {
         const centerX = wheelSize / 2;
         const centerY = wheelSize / 2 + pointerSize + 10;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import { ToastContainer, toast } from "react-toastify";
@@ -77,6 +77,167 @@ const createColorVariations = (baseColor) => {
 	return { light, dark, alpha, original: baseColor };
 };
 
+// Composant Tooltip amélioré avec support multi-lignes
+const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, elements }) => {
+	const [tooltipStyle, setTooltipStyle] = useState({});
+	const tooltipRef = useRef(null);
+
+	// Fonction pour formater le texte sur plusieurs lignes
+	const formatMultilineText = useCallback((text, maxCharsPerLine = 25) => {
+		if (!text || text.length <= maxCharsPerLine) {
+			return text;
+		}
+		
+		const words = text.split(' ');
+		const lines = [];
+		let currentLine = '';
+		
+		for (let word of words) {
+			const testLine = currentLine + (currentLine ? ' ' : '') + word;
+			if (testLine.length <= maxCharsPerLine) {
+				currentLine = testLine;
+			} else {
+				if (currentLine) {
+					lines.push(currentLine);
+					currentLine = word;
+				} else {
+					// Si un seul mot est trop long, le couper intelligemment
+					if (word.length > maxCharsPerLine) {
+						lines.push(word.substring(0, maxCharsPerLine - 3) + '...');
+						currentLine = '';
+					} else {
+						currentLine = word;
+					}
+				}
+			}
+		}
+		
+		if (currentLine) {
+			lines.push(currentLine);
+		}
+		
+		return lines.join('\n');
+	}, []);
+
+	// Calculer la position optimale du tooltip
+	useEffect(() => {
+		if (!isVisible || !element || !mousePosition || !tooltipRef.current) {
+			return;
+		}
+
+		const tooltip = tooltipRef.current;
+		const tooltipRect = tooltip.getBoundingClientRect();
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+		
+		let newStyle = {
+			position: 'fixed',
+			zIndex: 1000,
+			opacity: 1,
+			transform: 'translateY(0) scale(1)',
+			transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+		};
+
+		// Position horizontale
+		const spaceRight = viewportWidth - mousePosition.x;
+		const spaceLeft = mousePosition.x;
+		
+		if (spaceRight >= tooltipRect.width + 20) {
+			// Placer à droite
+			newStyle.left = mousePosition.x + 15;
+			newStyle.transformOrigin = 'left center';
+		} else if (spaceLeft >= tooltipRect.width + 20) {
+			// Placer à gauche
+			newStyle.right = viewportWidth - mousePosition.x + 15;
+			newStyle.transformOrigin = 'right center';
+		} else {
+			// Centrer horizontalement
+			newStyle.left = '50%';
+			newStyle.transform = 'translateX(-50%) translateY(0) scale(1)';
+			newStyle.transformOrigin = 'center center';
+		}
+
+		// Position verticale
+		const spaceBelow = viewportHeight - mousePosition.y;
+		const spaceAbove = mousePosition.y;
+		
+		if (spaceBelow >= tooltipRect.height + 20) {
+			// Placer en dessous
+			newStyle.top = mousePosition.y + 15;
+		} else if (spaceAbove >= tooltipRect.height + 20) {
+			// Placer au dessus
+			newStyle.bottom = viewportHeight - mousePosition.y + 15;
+		} else {
+			// Centrer verticalement
+			newStyle.top = '50%';
+			if (newStyle.transform) {
+				newStyle.transform = 'translateX(-50%) translateY(-50%) scale(1)';
+			} else {
+				newStyle.transform = 'translateY(-50%) scale(1)';
+			}
+		}
+
+		setTooltipStyle(newStyle);
+	}, [isVisible, element, mousePosition, wheelSize]);
+
+	if (!isVisible || !element) {
+		return null;
+	}
+
+	const formattedTitle = formatMultilineText(element.label, 30);
+	const probability = element.weight && elements ? 
+		((element.weight / elements.reduce((sum, el) => sum + (el.weight || 1), 0)) * 100).toFixed(1) : 
+		'N/A';
+
+	return (
+		<div 
+			ref={tooltipRef}
+			className="wheel-tooltip visible animate-in"
+			style={tooltipStyle}
+		>
+			<div className="wheel-tooltip-color">
+				<div 
+					className="wheel-tooltip-color-dot active"
+					style={{ backgroundColor: element.color || '#ccc' }}
+				></div>
+			</div>
+			
+			<div 
+				className="wheel-tooltip-title"
+				style={{
+					whiteSpace: 'pre-line', // Permet les retours à la ligne avec \n
+					wordBreak: 'break-word'  // Coupe les mots trop longs
+				}}
+			>
+				{formattedTitle}
+			</div>
+			
+			<div className="wheel-tooltip-content">
+				<div className="wheel-tooltip-stat">
+					<span className="wheel-tooltip-label">Weight:</span>
+					<span className="wheel-tooltip-value">{element.weight || 1}</span>
+				</div>
+				
+				<div className="wheel-tooltip-stat">
+					<span className="wheel-tooltip-label">Probability:</span>
+					<span className="wheel-tooltip-value">{probability}%</span>
+				</div>
+				
+				{element.isActif !== undefined && (
+					<div className="wheel-tooltip-stat">
+						<span className="wheel-tooltip-label">Status:</span>
+						<span className="wheel-tooltip-value" style={{ 
+							color: element.isActif ? '#00b894' : '#e17055' 
+						}}>
+							{element.isActif ? 'Active' : 'Inactive'}
+						</span>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+};
+
 const WheelDetails = () => {
 	const { wheelId } = useParams();
 	const navigate = useNavigate();
@@ -94,6 +255,10 @@ const WheelDetails = () => {
 	const [hoveredElement, setHoveredElement] = useState(null);
 	const [showResultsModal, setShowResultsModal] = useState(false);
 	const [recentResults, setRecentResults] = useState([]);
+	
+	// Nouveaux states pour le tooltip amélioré
+	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+	const [showTooltip, setShowTooltip] = useState(false);
 
 	const loadRecentResults = async () => {
 		try {
@@ -152,6 +317,26 @@ const WheelDetails = () => {
 			setIsLoading(false);
 		}
 	};
+
+	// Gestionnaire pour l'hover d'élément avec tooltip amélioré
+	const handleElementHover = useCallback((element) => {
+		setHoveredElement(element);
+		setShowTooltip(!!element);
+	}, []);
+
+	// Gestionnaire de mouvement de souris pour positionner le tooltip
+	const handleMouseMove = useCallback((event) => {
+		setMousePosition({
+			x: event.clientX,
+			y: event.clientY
+		});
+	}, []);
+
+	// Gestionnaire pour quitter l'hover
+	const handleMouseLeave = useCallback(() => {
+		setHoveredElement(null);
+		setShowTooltip(false);
+	}, []);
 
 	useEffect(() => {
 		const newSocket = io(process.env.REACT_APP_API_URL || "http://localhost:3000");
@@ -245,122 +430,122 @@ const WheelDetails = () => {
 	}, [isSocketReady, spinsLeft, userRole, wheel, socket]);
 
 	const playSpinSound = () => {
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const masterGain = audioContext.createGain();
-    masterGain.connect(audioContext.destination);
-    masterGain.gain.setValueAtTime(0.4, audioContext.currentTime);
-    
-    const currentTime = audioContext.currentTime;
-    const duration = 4; // Durée totale du son
-    
-    // 🎵 Son principal : effet "whoosh" rotatif
-    const createWhooshSound = () => {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(80, currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(300, currentTime + 0.5);
-      oscillator.frequency.exponentialRampToValueAtTime(120, currentTime + duration);
-      
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(800, currentTime);
-      filter.frequency.exponentialRampToValueAtTime(2000, currentTime + 1);
-      filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
-      
-      gain.gain.setValueAtTime(0.6, currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
-      
-      oscillator.connect(filter);
-      filter.connect(gain);
-      gain.connect(masterGain);
-      
-      oscillator.start(currentTime);
-      oscillator.stop(currentTime + duration);
-    };
-    
-    // 🎪 Son secondaire : clics rythmés (comme une roue qui tourne)
-    const createTickingSound = () => {
-      const tickCount = 20; // Nombre de clics
-      for (let i = 0; i < tickCount; i++) {
-        const tickTime = currentTime + (i * duration / tickCount);
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(800 + (i * 20), tickTime);
-        
-        gain.gain.setValueAtTime(0, tickTime);
-        gain.gain.linearRampToValueAtTime(0.3, tickTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.01, tickTime + 0.05);
-        
-        oscillator.connect(gain);
-        gain.connect(masterGain);
-        
-        oscillator.start(tickTime);
-        oscillator.stop(tickTime + 0.05);
-      }
-    };
-    
-    // 🎊 Son d'effet : montée dramatique
-    const createDramaticRise = () => {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-      
-      oscillator.type = 'triangle';
-      oscillator.frequency.setValueAtTime(150, currentTime + 2);
-      oscillator.frequency.exponentialRampToValueAtTime(600, currentTime + duration);
-      
-      filter.type = 'highpass';
-      filter.frequency.setValueAtTime(100, currentTime + 2);
-      filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
-      
-      gain.gain.setValueAtTime(0, currentTime + 2);
-      gain.gain.linearRampToValueAtTime(0.4, currentTime + 2.5);
-      gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
-      
-      oscillator.connect(filter);
-      filter.connect(gain);
-      gain.connect(masterGain);
-      
-      oscillator.start(currentTime + 2);
-      oscillator.stop(currentTime + duration);
-    };
-    
-    // 🎆 Son final : "ding" de fin
-    const createEndDing = () => {
-      setTimeout(() => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(800, currentTime + duration - 0.3);
-        oscillator.frequency.exponentialRampToValueAtTime(1200, currentTime + duration - 0.1);
-        
-        gain.gain.setValueAtTime(0.5, currentTime + duration - 0.3);
-        gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration + 0.5);
-        
-        oscillator.connect(gain);
-        gain.connect(masterGain);
-        
-        oscillator.start(currentTime + duration - 0.3);
-        oscillator.stop(currentTime + duration + 0.5);
-      }, 3700); // Délai pour synchroniser avec la fin du spin
-    };
-    
-    // Jouer tous les sons ensemble
-    createWhooshSound();
-    createTickingSound();
-    createDramaticRise();
-    createEndDing();
-    
-  } catch (error) {
-    console.log("Audio not supported or blocked:", error);
-  }
-};
+		try {
+			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			const masterGain = audioContext.createGain();
+			masterGain.connect(audioContext.destination);
+			masterGain.gain.setValueAtTime(0.4, audioContext.currentTime);
+			
+			const currentTime = audioContext.currentTime;
+			const duration = 4; // Durée totale du son
+			
+			// 🎵 Son principal : effet "whoosh" rotatif
+			const createWhooshSound = () => {
+				const oscillator = audioContext.createOscillator();
+				const gain = audioContext.createGain();
+				const filter = audioContext.createBiquadFilter();
+				
+				oscillator.type = 'sawtooth';
+				oscillator.frequency.setValueAtTime(80, currentTime);
+				oscillator.frequency.exponentialRampToValueAtTime(300, currentTime + 0.5);
+				oscillator.frequency.exponentialRampToValueAtTime(120, currentTime + duration);
+				
+				filter.type = 'lowpass';
+				filter.frequency.setValueAtTime(800, currentTime);
+				filter.frequency.exponentialRampToValueAtTime(2000, currentTime + 1);
+				filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
+				
+				gain.gain.setValueAtTime(0.6, currentTime);
+				gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+				
+				oscillator.connect(filter);
+				filter.connect(gain);
+				gain.connect(masterGain);
+				
+				oscillator.start(currentTime);
+				oscillator.stop(currentTime + duration);
+			};
+			
+			// 🎪 Son secondaire : clics rythmés (comme une roue qui tourne)
+			const createTickingSound = () => {
+				const tickCount = 20; // Nombre de clics
+				for (let i = 0; i < tickCount; i++) {
+					const tickTime = currentTime + (i * duration / tickCount);
+					const oscillator = audioContext.createOscillator();
+					const gain = audioContext.createGain();
+					
+					oscillator.type = 'square';
+					oscillator.frequency.setValueAtTime(800 + (i * 20), tickTime);
+					
+					gain.gain.setValueAtTime(0, tickTime);
+					gain.gain.linearRampToValueAtTime(0.3, tickTime + 0.01);
+					gain.gain.exponentialRampToValueAtTime(0.01, tickTime + 0.05);
+					
+					oscillator.connect(gain);
+					gain.connect(masterGain);
+					
+					oscillator.start(tickTime);
+					oscillator.stop(tickTime + 0.05);
+				}
+			};
+			
+			// 🎊 Son d'effet : montée dramatique
+			const createDramaticRise = () => {
+				const oscillator = audioContext.createOscillator();
+				const gain = audioContext.createGain();
+				const filter = audioContext.createBiquadFilter();
+				
+				oscillator.type = 'triangle';
+				oscillator.frequency.setValueAtTime(150, currentTime + 2);
+				oscillator.frequency.exponentialRampToValueAtTime(600, currentTime + duration);
+				
+				filter.type = 'highpass';
+				filter.frequency.setValueAtTime(100, currentTime + 2);
+				filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
+				
+				gain.gain.setValueAtTime(0, currentTime + 2);
+				gain.gain.linearRampToValueAtTime(0.4, currentTime + 2.5);
+				gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+				
+				oscillator.connect(filter);
+				filter.connect(gain);
+				gain.connect(masterGain);
+				
+				oscillator.start(currentTime + 2);
+				oscillator.stop(currentTime + duration);
+			};
+			
+			// 🎆 Son final : "ding" de fin
+			const createEndDing = () => {
+				setTimeout(() => {
+					const oscillator = audioContext.createOscillator();
+					const gain = audioContext.createGain();
+					
+					oscillator.type = 'sine';
+					oscillator.frequency.setValueAtTime(800, currentTime + duration - 0.3);
+					oscillator.frequency.exponentialRampToValueAtTime(1200, currentTime + duration - 0.1);
+					
+					gain.gain.setValueAtTime(0.5, currentTime + duration - 0.3);
+					gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration + 0.5);
+					
+					oscillator.connect(gain);
+					gain.connect(masterGain);
+					
+					oscillator.start(currentTime + duration - 0.3);
+					oscillator.stop(currentTime + duration + 0.5);
+				}, 3700); // Délai pour synchroniser avec la fin du spin
+			};
+			
+			// Jouer tous les sons ensemble
+			createWhooshSound();
+			createTickingSound();
+			createDramaticRise();
+			createEndDing();
+			
+		} catch (error) {
+			console.log("Audio not supported or blocked:", error);
+		}
+	};
 
 	const handleSpin = async () => {
 		console.log("handleSpin called, mustSpin:", mustSpin, "canSpin:", canSpin);
@@ -465,7 +650,7 @@ const WheelDetails = () => {
 	const wheelDisabled = !canSpin && !mustSpin;
 
 	return (
-		<div className="WheelDetails">
+		<div className="WheelDetails" onMouseMove={handleMouseMove}>
 			<div className="back-button">
 				<Link to="/">
 					<img src={money_emoji} alt="Home" className="back-button-img" />
@@ -503,7 +688,10 @@ const WheelDetails = () => {
 			</div>
 
 			<div className="wheel-section-layout">
-				<div className="wheel-container">
+				<div 
+					className="wheel-container"
+					onMouseLeave={handleMouseLeave}
+				>
 					<CustomWheel
 						elements={wheel.elements.filter((el) => el.isActif)}
 						onSpinEnd={handleSpinEnd}
@@ -515,7 +703,7 @@ const WheelDetails = () => {
 						borderWidth={0}
 						customColors={wheel.elements.filter((el) => el.isActif).map((element) => element.color)}
 						disabled={wheelDisabled}
-						onElementHover={setHoveredElement}
+						onElementHover={handleElementHover}
 					/>
 				</div>
 
@@ -565,6 +753,15 @@ const WheelDetails = () => {
 					</div>
 				)}
 			</div>
+
+			{/* Tooltip amélioré avec support multi-lignes */}
+			<EnhancedTooltip
+				element={hoveredElement}
+				mousePosition={mousePosition}
+				wheelSize={500}
+				isVisible={showTooltip && hoveredElement && !mustSpin}
+				elements={wheel.elements.filter((el) => el.isActif)}
+			/>
 
 			<div className="copy-link-button">
 				<button className="copyButton" onClick={copyToClipboard}>
@@ -637,45 +834,6 @@ const WheelDetails = () => {
 						))}
 				</div>
 			</div>
-
-			{hoveredElement && (
-				<div
-					className="hover-tooltip"
-					style={{
-						background: `linear-gradient(135deg, ${hoveredElement.color}, ${
-							createColorVariations(hoveredElement.color).dark
-						})`,
-						borderLeft: `4px solid ${hoveredElement.color}`,
-						boxShadow: `0 8px 24px ${createColorVariations(hoveredElement.color).alpha}, 0 0 0 1px ${
-							hoveredElement.color
-						}40`,
-					}}
-				>
-					<h4
-						style={{
-							borderBottomColor: `${hoveredElement.color}40`,
-							textShadow: `0 1px 2px ${createColorVariations(hoveredElement.color).dark}80`,
-						}}
-					>
-						{hoveredElement.label}
-					</h4>
-					<p>
-						<strong>Weight:</strong> {hoveredElement.weight}
-					</p>
-					<p>
-						<strong>Probability:</strong>{" "}
-						{calculateProbability(
-							hoveredElement.weight,
-							wheel.elements.filter((el) => el.isActif)
-						)}
-						%
-					</p>
-
-					<div className="color-indicator-tooltip">
-						<div className="color-dot" style={{ backgroundColor: hoveredElement.color }}></div>
-					</div>
-				</div>
-			)}
 
 			{true && (
 				<div className="admin-controls">

@@ -1,3 +1,5 @@
+/* CustomWheel.css - Améliorations pour tooltip multi-lignes */
+
 .custom-wheel-container {
     position: relative;
     margin: 0 auto;
@@ -104,15 +106,255 @@
     stroke: #fff;
     stroke-width: 0.5px;
     filter: drop-shadow(0 1px 2px #0008);
-    /* Pour le fond blanc semi-transparent */
     background: rgba(255,255,255,0.7);
     border-radius: 6px;
     padding: 2px 8px;
-    /* Pour le SVG, le fond doit être géré dans le composant, mais on documente ici */
     max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: pre;
 }
 
-/* Pour le SVG, il faut que le composant applique une <rect> blanche derrière le texte si possible */ 
+/* ========================================
+   TOOLTIP AMÉLIORÉ POUR TEXTES MULTI-LIGNES
+   ======================================== */
+
+/* Tooltip principal - Version améliorée */
+.wheel-tooltip {
+    position: fixed;
+    background: linear-gradient(135deg, rgba(46, 48, 56, 0.95), rgba(52, 54, 60, 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: white;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    max-width: 320px;
+    min-width: 200px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wheel-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Titre du tooltip avec texte multi-lignes */
+.wheel-tooltip-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    border-bottom: 2px solid rgba(255, 179, 0, 0.3);
+    padding-bottom: 12px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    
+    /* Support pour les très longs textes */
+    max-height: 120px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 179, 0, 0.5) transparent;
+}
+
+.wheel-tooltip-title::-webkit-scrollbar {
+    width: 4px;
+}
+
+.wheel-tooltip-title::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wheel-tooltip-title::-webkit-scrollbar-thumb {
+    background: rgba(255, 179, 0, 0.5);
+    border-radius: 2px;
+}
+
+/* Contenu du tooltip */
+.wheel-tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wheel-tooltip-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #ffb300;
+    transition: all 0.2s ease;
+}
+
+.wheel-tooltip-stat:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(2px);
+}
+
+.wheel-tooltip-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.wheel-tooltip-value {
+    color: #ffb300;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Indicateur de couleur dans le tooltip */
+.wheel-tooltip-color {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.wheel-tooltip-color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+/* Animation d'entrée du tooltip */
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.wheel-tooltip.animate-in {
+    animation: tooltipFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Positionnement responsive du tooltip */
+.wheel-tooltip.position-right {
+    transform-origin: left center;
+}
+
+.wheel-tooltip.position-left {
+    transform-origin: right center;
+}
+
+.wheel-tooltip.position-top {
+    transform-origin: center bottom;
+}
+
+.wheel-tooltip.position-bottom {
+    transform-origin: center top;
+}
+
+/* Styles spéciaux pour mobile */
+@media (max-width: 768px) {
+    .wheel-tooltip {
+        position: fixed;
+        top: 20px !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translateX(-50%) translateY(0) !important;
+        max-width: calc(100vw - 40px);
+        min-width: 280px;
+    }
+    
+    .wheel-tooltip.visible {
+        transform: translateX(-50%) translateY(0) !important;
+    }
+    
+    .wheel-tooltip-title {
+        font-size: 1.2rem;
+        max-height: 100px;
+    }
+}
+
+/* Support pour textes RTL */
+.wheel-tooltip[dir="rtl"] {
+    text-align: right;
+}
+
+.wheel-tooltip[dir="rtl"] .wheel-tooltip-stat {
+    flex-direction: row-reverse;
+    border-left: none;
+    border-right: 3px solid #ffb300;
+}
+
+/* Animation de pulsation pour l'élément actif */
+.wheel-tooltip-color-dot.active {
+    animation: colorPulse 2s ease-in-out infinite;
+}
+
+@keyframes colorPulse {
+    0%, 100% {
+        box-shadow: 
+            0 0 0 2px rgba(255, 255, 255, 0.3),
+            0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 0 0 4px rgba(255, 255, 255, 0.5),
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            0 0 20px currentColor;
+    }
+}
+
+/* Flèche du tooltip (optionnelle) */
+.wheel-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
+    z-index: -1;
+}
+
+.wheel-tooltip.arrow-left::before {
+    border-right-color: rgba(46, 48, 56, 0.95);
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.wheel-tooltip.arrow-right::before {
+    border-left-color: rgba(46, 48, 56, 0.95);
+    right: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.wheel-tooltip.arrow-top::before {
+    border-bottom-color: rgba(46, 48, 56, 0.95);
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.wheel-tooltip.arrow-bottom::before {
+    border-top-color: rgba(46, 48, 56, 0.95);
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+}
