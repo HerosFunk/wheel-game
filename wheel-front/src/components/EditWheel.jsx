@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import { Wheel } from "react-custom-roulette";
 import { Pencil } from "lucide-react";
+import './EditWheel.css';
 
 const API_URL = "http://localhost:3000/api";
 
@@ -31,14 +32,43 @@ const EditWheel = () => {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
           const data = await response.json();
-          setNameValue(data.name);
-          setOptions({ option1: data.removeAfterSelection, infinitySpin: data.numberOfSpins === -1 });
-          setSpinLimit(data.numberOfSpins === -1 ? "" : data.numberOfSpins);
-          setSegments(data.Elements.map(element => ({ id: element.id, name: element.label, weight: element.weight, isActif: element.isActif })).sort((a, b) => a.id - b.id));
+          
+          console.log("Données reçues:", data); // Debug
+          
+          setNameValue(data.name || "");
+          setOptions({ 
+            option1: data.removeAfterSelection || false, 
+            infinitySpin: data.numberOfSpins === -1 
+          });
+          setSpinLimit(data.numberOfSpins === -1 ? "" : data.numberOfSpins?.toString() || "");
+          
+          // L'API retourne 'elements' (minuscule), pas 'Elements'
+          const elements = data.elements || [];
+          setSegments(elements.map(element => ({ 
+            id: element._id || element.id, 
+            name: element.label || element.name, 
+            weight: element.weight || 1, 
+            isActif: element.isActif !== false 
+          })).sort((a, b) => {
+            // Amélioration du tri pour gérer différents types d'ID
+            const aId = a.id || 0;
+            const bId = b.id || 0;
+            if (typeof aId === 'string' && typeof bId === 'string') {
+              return aId.localeCompare(bId);
+            }
+            return aId > bId ? 1 : -1;
+          }));
+          
           setWheel(data);
         } catch (error) {
           console.error("Error fetching wheel:", error);
+          setErrorMessage("Unable to load the wheel. Please try again.");
         }
       };
 
@@ -63,14 +93,15 @@ const EditWheel = () => {
   };
 
   const calculateProbability = (weight, segments) => {
-    const totalWeight = segments.reduce((sum, segment) => sum + segment.weight, 0);
-    return ((weight / totalWeight) * 100).toFixed(1);
+    const activeSegments = segments.filter(segment => segment.isActif !== false);
+    const totalWeight = activeSegments.reduce((sum, segment) => sum + (segment.weight || 1), 0);
+    return totalWeight > 0 ? ((weight / totalWeight) * 100).toFixed(1) : 0;
   };
 
   const handleAddSegment = () => {
     let segmentName = inputValue.trim();
     if (!segmentName) {
-      segmentName = `${segments.length + 1}`;
+      segmentName = `Element ${segments.length + 1}`;
     }
 
     const weight = parseInt(weightValue);
@@ -81,7 +112,8 @@ const EditWheel = () => {
 
     const newSegment = {
       name: segmentName,
-      weight: weight
+      weight: weight,
+      isActif: true
     };
 
     setSegments([...segments, newSegment]);
@@ -101,7 +133,7 @@ const EditWheel = () => {
   };
 
   const splitTextIntoLines = (text, maxCharsPerLine) => {
-    if (text.length <= maxCharsPerLine) return text;
+    if (!text || text.length <= maxCharsPerLine) return text;
     const cutIndex = text.indexOf(" ", maxCharsPerLine);
     if (cutIndex === -1) return text;
     return `${text.substring(0, cutIndex)}...`;
@@ -194,11 +226,33 @@ const EditWheel = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
       const updatedWheel = await response.json();
-      setSegments(updatedWheel.Elements.map(element => ({ id: element.id, name: element.label, weight: element.weight, isActif: element.isActif })).sort((a, b) => a.id - b.id));
+      
+      // L'API retourne 'elements' (minuscule)
+      const elements = updatedWheel.elements || [];
+      setSegments(elements.map(element => ({ 
+        id: element._id || element.id, 
+        name: element.label || element.name, 
+        weight: element.weight || 1, 
+        isActif: element.isActif !== false 
+      })).sort((a, b) => {
+        const aId = a.id || 0;
+        const bId = b.id || 0;
+        if (typeof aId === 'string' && typeof bId === 'string') {
+          return aId.localeCompare(bId);
+        }
+        return aId > bId ? 1 : -1;
+      }));
+      
       setWheel(updatedWheel);
     } catch (error) {
       console.error("Error toggling element active:", error);
+      setErrorMessage("Unable to modify element status");
     }
   };
 
@@ -210,11 +264,33 @@ const EditWheel = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
       const updatedWheel = await response.json();
-      setSegments(updatedWheel.Elements.map(element => ({ id: element.id, name: element.label, weight: element.weight, isActif: element.isActif })).sort((a, b) => a.id - b.id));
+      
+      // L'API retourne 'elements' (minuscule)
+      const elements = updatedWheel.elements || [];
+      setSegments(elements.map(element => ({ 
+        id: element._id || element.id, 
+        name: element.label || element.name, 
+        weight: element.weight || 1, 
+        isActif: element.isActif !== false 
+      })).sort((a, b) => {
+        const aId = a.id || 0;
+        const bId = b.id || 0;
+        if (typeof aId === 'string' && typeof bId === 'string') {
+          return aId.localeCompare(bId);
+        }
+        return aId > bId ? 1 : -1;
+      }));
+      
       setWheel(updatedWheel);
     } catch (error) {
       console.error("Error setting all elements active:", error);
+      setErrorMessage("Unable to activate all elements");
     }
   };
 
@@ -226,22 +302,28 @@ const EditWheel = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
       const updatedWheel = await response.json();
       setWheel(updatedWheel);
       await setAllElementsActive();
     } catch (error) {
       console.error("Error resetting results:", error);
+      setErrorMessage("Unable to reset results");
     }
   };
 
   return (
-    <div className="CreateWheel" style={{ backgroundColor: "#282c34" }}>
-      <div style={{ position: "absolute", top: "20px", left: "20px" }}>
+    <div className="EditWheel">
+      <div className="back-button">
         <Link to="/">
           <img
             src={money_emoji}
             alt="Home"
-            style={{ width: "50px", height: "50px", cursor: "pointer" }}
+            className="back-button-img"
           />
         </Link>
       </div>
@@ -263,8 +345,8 @@ const EditWheel = () => {
               prizeNumber={0}
               fontSize={8}
               spinDuration={0}
-              data={wheel.Elements.map((element) => ({
-                option: splitTextIntoLines(element.label, 38),
+              data={(wheel.elements || []).map((element) => ({
+                option: splitTextIntoLines(element.label || element.name, 38),
                 style: {
                   backgroundColor: element.color,
                   textColor: "white",
@@ -277,176 +359,227 @@ const EditWheel = () => {
         </div>
       )}
 
-      <h1>Edit Your Wheel 😈</h1>
+      <h1>Edit Your Wheel 🎯</h1>
 
       {errorMessage && (
-        <div style={{ color: "red", marginBottom: "20px" }}>
+        <div className="error-message">
           <strong>Error:</strong> {errorMessage}
         </div>
       )}
 
-      <div className="input-section" style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Enter your wheel name"
-          value={nameValue}
-          onChange={(e) => setNameValue(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
-        />
-        
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
+      {/* Section nom de la roue */}
+      <div className="input-section">
+        <h3>Wheel Configuration</h3>
+        <div className="wheel-name-container">
+          <label className="wheel-name-label">Wheel Name</label>
           <input
             type="text"
-            placeholder="Enter a segment name"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-grow p-2 border rounded"
+            placeholder="Enter your wheel name"
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
+            className="wheel-name-input"
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        </div>
+
+        {/* Formulaire d'ajout de segment */}
+        <div className="segment-add-container">
+          <label className="segment-add-label">Add a segment</label>
+          
+          <div className="segment-form">
+            <input
+              type="text"
+              placeholder="e.g: Pizza, Option A..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              className="segment-name-input"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddSegment()}
+            />
             <input
               type="number"
               min="1"
               max="9"
               value={weightValue}
               onChange={(e) => setWeightValue(e.target.value)}
-              style={{ width: '60px' }}
-              className="p-2 border rounded"
+              className="segment-weight-input"
+              placeholder="Weight"
             />
             <button 
               onClick={handleAddSegment}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="segment-add-button"
+              type="button"
             >
               Add
             </button>
           </div>
+
+          <div className="weight-info">
+            Higher weight = more likely to be selected (1-9 scale)
+          </div>
         </div>
       </div>
 
-      <ul style={{ 
-        listStyle: 'none', 
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-      }}>
-        {segments.map((segment, index) => (
-          <li className="CreateWheelItem" key={index} style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'minmax(200px, 1fr) auto auto auto auto auto',
-            gap: '10px',
-            alignItems: 'center',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '4px',
-          }}>
-            {editingIndex === index ? (
-              <input
-                type="text"
-                value={editingValue}
-                onChange={(e) => setEditingValue(e.target.value)}
-                onBlur={() => handleEditSave(index)}
-                onKeyPress={(e) => e.key === 'Enter' && handleEditSave(index)}
-                className="p-1 border rounded"
-                autoFocus
-              />
-            ) : (
-              <span style={{color:'black', marginLeft:'8px'}}>{ segment.name}</span>
-            )}
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="number"
-                min="1"
-                max="9"
-                value={segment.weight}
-                onChange={(e) => handleWeightChange(index, e.target.value)}
-                style={{ width: '60px' }}
-                className="p-1 border rounded text-center"
-              />
-              <span style={{ minWidth: '70px' }}>
-                ({calculateProbability(segment.weight, segments)}%)
-              </span>
+      {/* Section des éléments existants */}
+      <div className="existing-elements-section">
+        <div className="section-header">
+          <h3 className="section-title">Wheel Elements ({segments.length})</h3>
+          <button 
+            onClick={setAllElementsActive}
+            className="bulk-action-button"
+          >
+            Activate All
+          </button>
+        </div>
+
+        {segments.length === 0 ? (
+          <div className="no-elements">
+            <div className="no-elements-icon">🎯</div>
+            <p>No elements in this wheel</p>
+            <p>Use the form above to add segments</p>
+          </div>
+        ) : (
+          <>
+            <div className="elements-list">
+              {segments.map((segment, index) => (
+                <div 
+                  key={segment.id || index} 
+                  className={`element-item ${segment.isActif === false ? 'inactive' : 'active'}`}
+                >
+                  <div className={`status-dot ${segment.isActif === false ? 'inactive' : 'active'}`}></div>
+
+                  <div className="element-name-container">
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => handleEditSave(index)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') handleEditSave(index);
+                          if (e.key === 'Escape') {
+                            setEditingIndex(null);
+                            setEditingValue("");
+                          }
+                        }}
+                        className="edit-input"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="element-name">{segment.name}</span>
+                    )}
+                  </div>
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="9"
+                    value={segment.weight || 1}
+                    onChange={(e) => handleWeightChange(index, e.target.value)}
+                    className="weight-input"
+                    disabled={segment.isActif === false}
+                  />
+
+                  <span className={`probability-value ${segment.isActif === false ? 'inactive' : ''}`}>
+                    {segment.isActif === false ? '0%' : calculateProbability(segment.weight || 1, segments)}%
+                  </span>
+
+                  <div className="action-buttons-container">
+                    <button
+                      onClick={() => handleEditClick(index)}
+                      className="action-button edit-button"
+                      title="Edit"
+                      disabled={editingIndex === index}
+                    >
+                      ✏️
+                    </button>
+
+                    <button
+                      onClick={() => toggleElementActive(segment.id || index)}
+                      className={`action-button toggle-button ${segment.isActif === false ? 'inactive' : 'active'}`}
+                      title={segment.isActif === false ? 'Activate' : 'Deactivate'}
+                      disabled={editingIndex === index}
+                    >
+                      {segment.isActif === false ? '👁️‍🗨️' : '👁️'}
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteSegment(index)}
+                      className="action-button delete-button"
+                      title="Delete"
+                      disabled={editingIndex === index}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <button
-              onClick={() => handleEditClick(index)}
-              className="p-2 text-blue-600 hover:text-blue-800"
-              title="Edit"
-            >
-              <Pencil size={16} />
-            </button>
-
-            <button
-              onClick={() => handleDeleteSegment(index)}
-              className="p-2 text-red-600 hover:text-red-800"
-            >
-              Delete
-            </button>
-            
-            <button
-              onClick={() => toggleElementActive(segment.id)}
-              style={{
-                backgroundColor: segment.isActif ? "#ff69b4" : "white",
-                color: segment.isActif ? "white" : "#ff69b4",
-                border: "1px solid #ff69b4",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                cursor: "pointer"
-              }}
-            >
-              {segment.isActif ? "Deactivate" : "Activate"}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={options.option1}
-            onChange={() => handleCheckboxChange("option1")}
-          />
-          Remove a label after selection
-        </label>
-        <br />
-        <label>
-          <input
-            type="checkbox"
-            checked={options.infinitySpin}
-            onChange={() => handleCheckboxChange("infinitySpin")}
-          />
-          Infinity spins
-        </label>
+            {/* Statistiques */}
+            <div className="elements-stats">
+              <div className="stat-item">
+                <span className="stat-label">Total:</span>
+                <span className="stat-value">{segments.length}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Active:</span>
+                <span className="stat-value active">{segments.filter(s => s.isActif !== false).length}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Inactive:</span>
+                <span className="stat-value inactive">{segments.filter(s => s.isActif === false).length}</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {!options.infinitySpin && (
-        <div>
-          <label>
-            Set spin limit:{" "}
+      {/* Section des options */}
+      <div className="options-section">
+        <h3>Wheel Options</h3>
+        <div className="options-container">
+          <label className="option-label">
+            <input
+              type="checkbox"
+              checked={options.option1}
+              onChange={() => handleCheckboxChange("option1")}
+            />
+            Remove element after selection
+          </label>
+          <label className="option-label">
+            <input
+              type="checkbox"
+              checked={options.infinitySpin}
+              onChange={() => handleCheckboxChange("infinitySpin")}
+            />
+            Infinite spins
+          </label>
+        </div>
+
+        {!options.infinitySpin && (
+          <div className="spin-limit-container">
+            <label className="spin-limit-label">Number of spins:</label>
             <input
               type="number"
               value={spinLimit}
-              placeholder="Enter spin limit"
+              min="1"
+              max="10000"
+              step="1"
+              placeholder="e.g: 10"
               onChange={(e) => setSpinLimit(e.target.value)}
+              className="spin-limit-input"
             />
-          </label>
-        </div>
-      )}
+            <div className="spin-limit-hint">Between 1 and 10,000 spins</div>
+          </div>
+        )}
+      </div>
 
-      <div>
-        <br />
+      {/* Boutons d'action */}
+      <div className="action-buttons">
         <button 
-          style={{
-            marginRight: "10px",
-            color: "white",
-            backgroundColor: "green",
-            border: "none",
-            padding: "10px",
-            cursor: "pointer"
-          }}
+          className="preview-button"
           onClick={() => {
             if (segments.length < 2) {
-              setErrorMessage("At least 2 segments are required.");
+              setErrorMessage("At least 2 segments are required for preview.");
               return;
             }
             const segmentObjects = segments.map((segment) => ({
@@ -454,47 +587,37 @@ const EditWheel = () => {
             }));
 
             setWheel({
-              Elements: assignColors(segmentObjects, colorPalette),
+              elements: assignColors(segmentObjects, colorPalette),
             });
             setIsModalOpen(true);
             setIsWheelVisible(true);
           }}>
           Preview
         </button>
-        <button className="createButton" onClick={handleSaveChanges} style={{marginBottom:"48px"}}>
+        <button className="save-button" onClick={handleSaveChanges}>
           Save Changes
         </button>
       </div>
 
+      {/* Section des résultats */}
       {wheel && wheel.selectedElement && (
-        <>
-          <div style={{ marginBottom: "75px" }}>
-            <h3>Results</h3>
-            <ul className="results-list" style={{ listStyle: "none", padding: 0, textAlign: "left", margin: "0 auto", width: "fit-content" }}>
-                {console.log(wheel.selectedElement)}
-              {wheel.selectedElement.split(",").map((result, index) => {
-                const segment = segments.find(segment => segment.id === parseInt(result));
-                return (
-                  <li
-                    key={index}
-                    className="results-list-item"
-                    style={{
-                      display: "flex",
-                      gap: "10px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span style={{ width: "30px", textAlign: "right" }}>
-                      {index + 1} :
-                    </span>
-                    <span style={{ whiteSpace: "nowrap" }}>{segment ? segment.name : "Unknown"}</span>
-                  </li>
-                );
-              })}
-            </ul>
-            <button onClick={resetResults}>Reset Results</button>
-          </div>
-        </>
+        <div className="results-section">
+          <h3>Previous Results</h3>
+          <ul className="results-list">
+            {wheel.selectedElement.split(",").map((result, index) => {
+              const segment = segments.find(segment => segment.id === parseInt(result));
+              return (
+                <li key={index} className="results-list-item">
+                  <span className="result-index">{index + 1}:</span>
+                  <span className="result-name">{segment ? segment.name : "Unknown"}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <button onClick={resetResults} className="reset-results-button">
+            Reset Results
+          </button>
+        </div>
       )}
     </div>
   );

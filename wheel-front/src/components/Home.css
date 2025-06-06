@@ -1,0 +1,270 @@
+.App {
+  background: #23252b;
+  min-height: 100vh;
+  text-align: center;
+}
+
+.App-header {
+  background: linear-gradient(135deg, #23252b 0%, #2e3038 50%, #34363c 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.App-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(108, 92, 231, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.App-header h1 {
+  font-size: 4rem;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 3px;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 20px;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.App-logo {
+  height: 25vh;
+  padding: 40px 0;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.App-logo:hover {
+  transform: scale(1.05) rotate(5deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Styles des boutons principaux */
+button {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 18px 36px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+  transition: all 0.3s ease;
+  margin: 12px;
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+  user-select: none;
+  z-index: 1;
+}
+
+button[theme="blue"] {
+  background: linear-gradient(135deg, #6c5ce7, #5f3dc4);
+  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
+}
+
+button[theme="pink"] {
+  background: linear-gradient(135deg, #ff6b6b, #e84393);
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+}
+
+button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(255, 107, 107, 0.4);
+}
+
+button[theme="blue"]:hover {
+  box-shadow: 0 12px 25px rgba(108, 92, 231, 0.4);
+}
+
+button[theme="pink"]:hover {
+  box-shadow: 0 12px 25px rgba(255, 107, 107, 0.4);
+}
+
+button:active {
+  transform: translateY(-1px);
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+button:hover::before {
+  left: 100%;
+}
+
+/* Section How to Use */
+.how-to-use {
+  background: rgba(46, 48, 56, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 40px;
+  margin: 60px auto 100px auto;
+  max-width: 800px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.how-to-use h2 {
+  font-size: 2.5rem;
+  color: #ffb300;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.how-to-steps {
+  display: grid;
+  gap: 20px;
+  text-align: left;
+}
+
+.how-to-steps p {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  border-left: 4px solid #ffb300;
+  transition: all 0.3s ease;
+}
+
+.how-to-steps p:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(5px);
+}
+
+.how-to-steps strong {
+  color: #ffb300;
+  font-size: 1.2rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Footer cohérent */
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(52, 54, 60, 0.95), rgba(46, 48, 56, 0.95));
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 12px;
+  font-size: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 2.5rem;
+    letter-spacing: 1px;
+  }
+  
+  .App-logo {
+    height: 20vh;
+    padding: 20px 0;
+  }
+  
+  button {
+    padding: 14px 28px;
+    font-size: 1.1rem;
+    min-width: 180px;
+    margin: 8px;
+  }
+  
+  .how-to-use {
+    margin: 40px 20px 80px 20px;
+    padding: 30px 20px;
+  }
+  
+  .how-to-use h2 {
+    font-size: 2rem;
+  }
+  
+  .how-to-steps p {
+    padding: 16px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header {
+    padding: 20px 15px;
+  }
+  
+  .App-header h1 {
+    font-size: 2rem;
+  }
+  
+  .App-logo {
+    height: 15vh;
+  }
+  
+  button {
+    padding: 12px 24px;
+    font-size: 1rem;
+    min-width: 160px;
+  }
+  
+  .how-to-use {
+    margin: 30px 15px 60px 15px;
+    padding: 25px 15px;
+  }
+}

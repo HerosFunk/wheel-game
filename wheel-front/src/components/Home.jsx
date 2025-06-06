@@ -1,9 +1,9 @@
-// src/pages/Home.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CustomButton from "../components/CustomButton";
 import Footer from "../components/Footer";
 import money_emoji from "../img/money_emoji.png";
+import './Home.css';
 
 const img_list = [money_emoji];
 const random_img_number = Math.floor(Math.random() * img_list.length);

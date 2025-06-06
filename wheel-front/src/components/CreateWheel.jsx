@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import { Wheel } from "react-custom-roulette";
 import { Pencil } from "lucide-react";
+import './CreateWheel.css';
 
 const API_URL = "http://localhost:3000/api";
 
@@ -260,7 +261,7 @@ const CreateWheel = () => {
               max="9"
               value={weightValue}
               onChange={(e) => setWeightValue(e.target.value)}
-              style={{ width: '60px' }}
+              style={{ width: '80px' }}
               className="p-2 border rounded"
             />
             <button 
@@ -310,7 +311,7 @@ const CreateWheel = () => {
                 max="9"
                 value={segment.weight}
                 onChange={(e) => handleWeightChange(index, e.target.value)}
-                style={{ width: '60px' }}
+                style={{ width: '80px' }}
                 className="p-1 border rounded text-center"
               />
               <span style={{ minWidth: '70px' }}>
@@ -363,6 +364,9 @@ const CreateWheel = () => {
             <input
               type="number"
               value={spinLimit}
+              min="1"
+              max="10000"
+              step="1"
               placeholder="Enter spin limit"
               onChange={(e) => setSpinLimit(e.target.value)}
             />

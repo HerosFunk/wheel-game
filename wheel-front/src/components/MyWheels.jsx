@@ -130,10 +130,10 @@ const MyWheels = () => {
 
       <div className="wheels-container">
         {loading ? (
-          <div className="loading">Chargement...</div>
+          <div className="loading">Loading...</div>
         ) : wheels.length === 0 ? (
           <div className="no-wheels">
-            <p>Aucune roue trouvée</p>
+            <p>No wheel found</p>
             <Link to="/create">
               <CustomButton text="Créer une roue" />
             </Link>
@@ -150,8 +150,8 @@ const MyWheels = () => {
                   {wheel.isFavorite ? '★' : '☆'}
                 </button>
               </div>
-              <p>Spins restants: {wheel.numberOfSpinsLeft === -1 ? '∞' : wheel.numberOfSpinsLeft}</p>
-              <p>Eléments: {wheel.elements?.length || 0}</p>
+              <p>Spins remaining: {wheel.numberOfSpinsLeft === -1 ? '∞' : wheel.numberOfSpinsLeft}</p>
+              <p>Elements: {wheel.elements?.length || 0}</p>
               <div className="wheel-card-actions">
                 <button onClick={() => navigate(`/wheel/${wheel._id}`)}>View</button>
                 <button onClick={() => navigate(`/edit-wheel/${wheel._id}`)}>Edit</button>
