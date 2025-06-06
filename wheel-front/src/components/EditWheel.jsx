@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
-import { Wheel } from "react-custom-roulette";
+import CustomWheel from "./CustomWheel";
 import { Pencil } from "lucide-react";
 
 const API_URL = "http://localhost:3000/api";
@@ -371,29 +371,100 @@ const EditWheel = () => {
         <div className={`modal-overlay ${isWheelVisible ? "visible" : "hidden"}`} 
           onClick={() => {setIsModalOpen(false); setIsWheelVisible(false);}}
           style={{
-            transition: "opacity 0.3s ease, visibility 0.3s ease",
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
             opacity: isWheelVisible ? 1 : 0,
-            visibility: isWheelVisible ? "visible" : "hidden",
-            pointerEvents: isWheelVisible ? "auto" : "none",
+            visibility: isWheelVisible ? 'visible' : 'hidden',
+            transition: 'opacity 0.3s ease, visibility 0.3s ease'
           }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => {setIsModalOpen(false); setIsWheelVisible(false);}}>
-              ❌
+          <div 
+            className="modal-content" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'rgba(46, 48, 56, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '20px',
+              padding: '40px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px'
+            }}
+          >
+            <button 
+              className="close-btn" 
+              onClick={() => {setIsModalOpen(false); setIsWheelVisible(false);}}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: 'transparent',
+                color: '#e74c3c',
+                border: 'none',
+                outline: 'none',
+                fontSize: '2rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'right',
+                padding: 0,
+                lineHeight: 1,
+                fontWeight: 'bold',
+                width: 'auto',
+                height: 'auto',
+                boxShadow: 'none',
+                textTransform: 'none',
+                letterSpacing: 'normal',
+                transition: 'none',
+                transform: 'none'
+              }}
+            >
+              ×
             </button>
-            <Wheel
-              prizeNumber={0}
-              fontSize={8}
-              spinDuration={0}
-              data={(wheel.elements || []).map((element) => ({
-                option: splitTextIntoLines(element.label || element.name, 38),
-                style: {
-                  backgroundColor: element.color,
-                  textColor: "white",
-                },
-              }))}
-              mustStartSpinning={false}
-              onStopSpinning={() => {}}
-            />
+            <h2 style={{ 
+              color: '#fff', 
+              fontSize: '1.5rem', 
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}>
+              Wheel Preview
+            </h2>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '100%',
+              height: '100%'
+            }}>
+              <CustomWheel
+                elements={wheel.elements.map((element) => ({
+                  label: element.label,
+                  weight: element.weight || 1
+                }))}
+                onSpinEnd={() => {}}
+                isSpinning={false}
+                spinDuration={5}
+                spinSpeed={10}
+                wheelSize={500}
+                borderWidth={0}
+                customColors={wheel.elements.map((element, index) => colorPalette[index % colorPalette.length])}
+                disabled={false}
+              />
+            </div>
           </div>
         </div>
       )}
