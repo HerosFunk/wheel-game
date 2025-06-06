@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
 
-const URL = "https://wheel-game.azurewebsites.net/";
+const URL = "http://localhost:3000/api";
 
 export const socket = io(URL);

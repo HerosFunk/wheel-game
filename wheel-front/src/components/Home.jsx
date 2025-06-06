@@ -16,7 +16,7 @@ const Home = () => {
     const fetchWheels = async () => {
       try {
         console.log("fetch")
-        const response = await fetch("https://wheel-game.azurewebsites.net/wheels", {
+        const response = await fetch("http://localhost:3000/wheels", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

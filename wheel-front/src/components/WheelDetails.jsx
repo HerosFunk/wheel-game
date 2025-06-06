@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
 import CustomWheel from './CustomWheel';
+import ResultsDisplay from './ResultsDisplay';
 import { getWheel, spinWheel, updateElementStatus, setAllElementsActive, resetResults } from '../services/api';
 import './WheelDetails.css';
 import io from 'socket.io-client';
@@ -35,6 +36,29 @@ const calculateProbability = (weight, segments) => {
   return ((weight / totalWeight) * 100).toFixed(1);
 };
 
+// Fonction utilitaire pour créer des variations de couleur
+const createColorVariations = (baseColor) => {
+  // Convertir hex en RGB
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  };
+
+  const rgb = hexToRgb(baseColor);
+  if (!rgb) return { light: baseColor, dark: baseColor, alpha: baseColor + '20' };
+
+  // Créer des variations
+  const light = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
+  const dark = `rgb(${Math.max(0, rgb.r - 30)}, ${Math.max(0, rgb.g - 30)}, ${Math.max(0, rgb.b - 30)})`;
+  const alpha = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
+
+  return { light, dark, alpha, original: baseColor };
+};
+
 const WheelDetails = () => {
   const { wheelId } = useParams();
   const navigate = useNavigate();
@@ -50,6 +74,43 @@ const WheelDetails = () => {
   const [socket, setSocket] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [hoveredElement, setHoveredElement] = useState(null); // Nouvel état pour l'élément survolé
+  const [showResultsModal, setShowResultsModal] = useState(false); // État pour la modal des résultats
+  const [recentResults, setRecentResults] = useState([]); // Stockage des résultats récents
+
+  // Fonction pour charger les résultats récents
+  const loadRecentResults = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results/recent?limit=5`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Recent results loaded:", data); // Debug
+      setRecentResults(data);
+    } catch (error) {
+      console.error("Error loading recent results:", error);
+      // Fallback vers l'ancien système
+      if (wheel && wheel.selectedElement) {
+        const resultIds = wheel.selectedElement.split(',').filter(id => id.trim());
+        const parsedResults = resultIds.slice(-5).map((id, index) => {
+          const element = wheel.elements.find(el => el._id === id || el.id === id);
+          return {
+            _id: `${id}-${index}`,
+            elementLabel: element ? element.label : 'Unknown',
+            createdAt: new Date(Date.now() - (5 - index) * 60000).toISOString()
+          };
+        }).reverse();
+        
+        setRecentResults(parsedResults);
+      }
+    }
+  };
 
   const userRole = Cookies.get("role") || ""; // Récupérer le rôle depuis le cookie
 
@@ -67,6 +128,9 @@ const WheelDetails = () => {
       });
       setSpinsLeft(data.numberOfSpinsLeft === -1 ? "Unlimited" : data.numberOfSpinsLeft.toString());
       setIsSocketReady(true); // Les données sont prêtes, autoriser les sockets
+      
+      // Charger aussi les résultats récents
+      await loadRecentResults();
     } catch (error) {
       setErrorMessage("Erreur lors du chargement de la roue");
       console.error("Erreur:", error);
@@ -304,7 +368,8 @@ const WheelDetails = () => {
       </div>
 
       <div className="wheel-header">
-        <h1 className="wheel-title">{wheel.name.toUpperCase()}</h1>
+        <h1 className="wheel-title">{wheel.name}</h1>
+        <div className="wheel-subtitle">Spin the wheel to get your result!</div>
       </div>
 
       <div className="wheel-info-card">
@@ -375,11 +440,31 @@ const WheelDetails = () => {
         </div>
 
         {selectedElement && (
-          <div className="selected-element-display">
+          <div 
+            className="selected-element-display"
+            style={{
+              background: selectedElement.color 
+                ? `linear-gradient(135deg, ${createColorVariations(selectedElement.color).light}, ${selectedElement.color})`
+                : 'linear-gradient(135deg, #ffeaa7, #fdcb6e)',
+              boxShadow: selectedElement.color 
+                ? `0 4px 20px ${createColorVariations(selectedElement.color).alpha}`
+                : '0 4px 20px rgba(253, 203, 110, 0.3)'
+            }}
+          >
             <h2>Selected Element</h2>
             <div className="selected-element-label">
               {selectedElement.label}
             </div>
+            
+            {/* Indicateur de couleur pour l'élément sélectionné */}
+            {selectedElement.color && (
+              <div className="selected-color-indicator">
+                <div 
+                  className="selected-color-dot"
+                  style={{ backgroundColor: selectedElement.color }}
+                ></div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -409,10 +494,17 @@ const WheelDetails = () => {
           {wheel.elements.filter(el => el.isActif).map((element, index) => (
             <div 
               key={element._id || element.id} 
-              className={`element-card ${hoveredElement?.id === element.id ? 'highlighted' : ''}`}
+              className={`element-card ${hoveredElement?.id === element.id || hoveredElement?._id === element._id ? 'highlighted' : ''}`}
               style={{
                 borderLeft: `6px solid ${element.color || '#ccc'}`,
-                backgroundColor: `${element.color}15`
+                backgroundColor: `${element.color}15`,
+                // Animation de surbrillance si c'est l'élément survolé
+                boxShadow: hoveredElement?.id === element.id || hoveredElement?._id === element._id 
+                  ? `0 8px 24px ${element.color}40, 0 0 0 2px ${element.color}80` 
+                  : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                transform: hoveredElement?.id === element.id || hoveredElement?._id === element._id 
+                  ? 'translateY(-4px) scale(1.02)' 
+                  : 'translateY(0) scale(1)'
               }}
               onMouseEnter={() => setHoveredElement(element)}
               onMouseLeave={() => setHoveredElement(null)}
@@ -444,18 +536,50 @@ const WheelDetails = () => {
 
       {/* Tooltip for hovered element */}
       {hoveredElement && (
-        <div className="hover-tooltip">
-          <h4>{hoveredElement.label}</h4>
+        <div 
+          className="hover-tooltip"
+          style={{
+            background: `linear-gradient(135deg, ${hoveredElement.color}, ${createColorVariations(hoveredElement.color).dark})`,
+            borderLeft: `4px solid ${hoveredElement.color}`,
+            boxShadow: `0 8px 24px ${createColorVariations(hoveredElement.color).alpha}, 0 0 0 1px ${hoveredElement.color}40`
+          }}
+        >
+          <h4 style={{ 
+            borderBottomColor: `${hoveredElement.color}40`,
+            textShadow: `0 1px 2px ${createColorVariations(hoveredElement.color).dark}80`
+          }}>
+            {hoveredElement.label}
+          </h4>
           <p><strong>Weight:</strong> {hoveredElement.weight}</p>
           <p><strong>Probability:</strong> {calculateProbability(hoveredElement.weight, wheel.elements.filter(el => el.isActif))}%</p>
+          
+          {/* Indicateur de couleur dans le tooltip */}
+          <div className="color-indicator-tooltip">
+            <div 
+              className="color-dot"
+              style={{ backgroundColor: hoveredElement.color }}
+            ></div>
+            <span>Element Color</span>
+          </div>
         </div>
       )}
 
       {/* Contrôles administrateur */}
-      {userRole === "creator" && (
+      {true && (
         <div className="admin-controls">
           <h3>Administrator Controls</h3>
           <div className="admin-buttons">
+            <button 
+              className="control-button" 
+              onClick={(e) => {
+                e.preventDefault();
+                console.log("View Results button clicked, current state:", showResultsModal);
+                setShowResultsModal(true);
+                console.log("showResultsModal set to true");
+              }}
+            >
+              View Results & Stats
+            </button>
             <button className="control-button" onClick={handleActivateAll}>
               Reactivate All Elements
             </button>
@@ -486,6 +610,55 @@ const WheelDetails = () => {
       )}
 
       <ToastContainer />
+
+      {/* Test button temporaire */}
+      {process.env.NODE_ENV === 'development' && (
+        <button 
+          style={{
+            position: 'fixed',
+            top: '100px',
+            left: '10px',
+            background: 'red',
+            color: 'white',
+            padding: '10px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            zIndex: 9999
+          }}
+          onClick={() => {
+            console.log("Force opening modal");
+            setShowResultsModal(prev => !prev);
+          }}
+        >
+          Toggle Modal (Test)
+        </button>
+      )}
+
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ 
+          position: 'fixed', 
+          top: '10px', 
+          left: '10px', 
+          background: 'rgba(0,0,0,0.8)', 
+          color: 'white', 
+          padding: '10px', 
+          borderRadius: '4px',
+          fontSize: '12px',
+          zIndex: 9999
+        }}>
+          showResultsModal: {showResultsModal.toString()}<br/>
+          recentResults: {recentResults.length}
+        </div>
+      )}
+
+      {/* Modal des résultats */}
+      <ResultsDisplay 
+        wheelId={wheelId}
+        isVisible={showResultsModal}
+        onClose={() => setShowResultsModal(false)}
+      />
     </div>
   );
 };

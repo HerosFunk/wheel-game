@@ -16,19 +16,16 @@ const wheelSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function(v) {
-                return v >= -1; // Accepte -1 (infini) ou tout nombre positif
+                return v >= -1;
             },
-            message: props => `${props.value} n'est pas une valeur valide pour numberOfSpins. Doit être -1 (infini) ou un nombre positif.`
+            message: props => `${props.value} n'est pas une valeur valide pour numberOfSpins.`
         }
     },
     numberOfSpinsLeft: {
         type: Number,
         default: null
     },
-    selectedElement: {
-        type: String,
-        default: null
-    },
+    
     elements: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Element'
@@ -36,6 +33,14 @@ const wheelSchema = new mongoose.Schema({
     isFavorite: {
         type: Boolean,
         default: false
+    },
+    totalSpinsCount: {
+        type: Number,
+        default: 0
+    },
+    lastSpinAt: {
+        type: Date,
+        default: null
     },
     createdAt: {
         type: Date,
@@ -50,5 +55,4 @@ const wheelSchema = new mongoose.Schema({
 });
 
 const Wheel = mongoose.model('Wheel', wheelSchema);
-
 module.exports = Wheel;

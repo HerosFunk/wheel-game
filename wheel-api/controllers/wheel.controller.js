@@ -4,6 +4,7 @@ const io = require('../socket/socket');
 const wheelService = require('../services/wheel.service');
 const elementService = require('../services/element.service');
 const socketIO = require('../socket/socket');
+const resultService = require('../services/result.service');
 
 exports.createWheel = async (req, res) => {
     const { name, removeAfterSelection, numberOfSpins } = req.body;
@@ -52,24 +53,21 @@ exports.getWheels = async (req, res) => {
     try {
         const { sortBy, sortOrder, favoriteOnly } = req.query;
         
-        // Construire la requête de base
         let query = {};
         
-        // Ajouter le filtre des favoris si demandé
         if (favoriteOnly === 'true' || favoriteOnly === true) {
             query.isFavorite = true;
         }
         
-        // Construire l'objet de tri
         let sortOptions = {};
         if (sortBy) {
             sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
         } else {
-            sortOptions.createdAt = -1; // Tri par défaut par date de création décroissante
+            sortOptions.createdAt = -1;
         }
         
-        console.log('Query:', query); // Pour le débogage
-        console.log('Sort options:', sortOptions); // Pour le débogage
+        console.log('Query:', query);
+        console.log('Sort options:', sortOptions);
         
         const wheels = await Wheel.find(query)
             .sort(sortOptions)
@@ -163,47 +161,97 @@ exports.spinWheel = async (req, res) => {
         const randomIndex = Math.floor(Math.random() * weightedElements.length);
         const selectedElement = weightedElements[randomIndex];
         
+        // Générer un sessionId pour grouper les spins (optionnel)
+        const sessionId = req.headers['x-session-id'] || req.sessionID || null;
+        
+        // Métadonnées pour l'historique
+        const metadata = {
+            userAgent: req.headers['user-agent'],
+            ipAddress: req.ip || req.connection.remoteAddress
+        };
+
+        // Enregistrer le résultat dans la nouvelle structure
+        const result = await resultService.addResult(
+            id, 
+            selectedElement._id, 
+            {
+                label: selectedElement.label,
+                weight: selectedElement.weight
+            },
+            sessionId,
+            metadata
+        );
+
+        // Obtenir le résultat précédent pour compatibilité
+        const recentResults = await resultService.getRecentResults(id, 2);
+        const previousResult = recentResults.length > 1 ? recentResults[1] : null;
+        
         if (wheel.removeAfterSelection) {
             await Element.findByIdAndUpdate(selectedElement._id, { isActif: false });
         }
 
-        if (wheel.numberOfSpins === -1) {
-            if (!wheel.selectedElement) {
-                wheel.selectedElement = selectedElement._id.toString();
-            } else {
-                wheel.selectedElement += "," + selectedElement._id;
-            }
+        if (wheel.numberOfSpins !== -1) {
+            wheel.numberOfSpinsLeft -= 1;
             await wheel.save();
+        }
 
-            if (wheel.selectedElement.split(",").length > 1) {
-                const dernierResultat = wheel.selectedElement.split(",")[wheel.selectedElement.split(",").length - 2];
-                io.getIO().emit("spin", { result: selectedElement._id, dernierResultat });
-                return res.send({ result: selectedElement._id, dernierResultat });
-            } else {
-                io.getIO().emit("spin", { result: selectedElement._id });
-                return res.send({ result: selectedElement._id });
+        // Réponse avec la nouvelle structure mais compatible avec l'ancien format
+        const response = {
+            result: selectedElement._id,
+            dernierResultat: previousResult ? previousResult.selectedElement : null,
+            spinNumber: result.spinNumber,
+            totalSpins: result.spinNumber,
+            // Informations détaillées du résultat
+            resultDetails: {
+                id: result._id,
+                label: selectedElement.label,
+                weight: selectedElement.weight,
+                timestamp: result.createdAt
             }
-        }
+        };
 
-        wheel.numberOfSpinsLeft -= 1;
-        if (!wheel.selectedElement) {
-            wheel.selectedElement = selectedElement._id.toString();
-        } else {
-            wheel.selectedElement += "," + selectedElement._id;
-        }
-        await wheel.save();
-
-        if (wheel.selectedElement && wheel.selectedElement.split(",").length > 1) {
-            const dernierResultat = wheel.selectedElement.split(",")[wheel.selectedElement.split(",").length - 2];
-            io.getIO().emit("spin", { result: selectedElement._id, dernierResultat });
-            return res.send({ result: selectedElement._id, dernierResultat });
-        } else {
-            io.getIO().emit("spin", { result: selectedElement._id });
-            return res.send({ result: selectedElement._id });
-        }
+        // Émettre via socket pour temps réel
+        io.getIO().emit("spin", response);
+        
+        return res.send(response);
     } catch (error) {
         console.error(error);
         return res.status(500).send({ error: "Error spinning wheel" });
+    }
+};
+
+exports.getWheelResults = async (req, res) => {
+    const { id } = req.params;
+    const { page = 1, limit = 20, format = 'detailed' } = req.query;
+
+    try {
+        if (format === 'stats') {
+            const stats = await resultService.getWheelStats(id);
+            return res.json(stats);
+        }
+
+        const resultsData = await resultService.getWheelResults(id, {
+            page: parseInt(page),
+            limit: parseInt(limit)
+        });
+
+        return res.json(resultsData);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ error: "Error getting results" });
+    }
+};
+
+exports.getRecentResults = async (req, res) => {
+    const { id } = req.params;
+    const { limit = 10 } = req.query;
+
+    try {
+        const results = await resultService.getRecentResults(id, parseInt(limit));
+        return res.json(results);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ error: "Error getting recent results" });
     }
 };
 
@@ -317,7 +365,6 @@ exports.toggleElementActive = async (req, res) => {
   }
 };
 
-// Set all elements to active
 exports.setAllElementsActive = async (req, res) => {
   const { wheelId } = req.params;
   try {
@@ -336,27 +383,24 @@ exports.setAllElementsActive = async (req, res) => {
   }
 };
 
-// Reset results
 exports.resetResults = async (req, res) => {
-  const { wheelId } = req.params;
-  try {
-    const wheel = await Wheel.findById(wheelId);
-    if (!wheel) {
-      return res.status(404).json({ message: "Wheel not found" });
-    }
-    const elements = await Element.find({ wheel: wheelId });
-    wheel.selectedElement = "";
+    const { wheelId } = req.params;
     
-    await wheel.save();
-    wheel.elements = elements
-    socketIO.emitToRoom(`wheel:${wheelId}`, 'wheel:reset', { wheelId: wheelId });
-    res.status(200).json(wheel);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+    try {
+        await resultService.resetWheelResults(wheelId);
+        
+        // Réactiver tous les éléments
+        await Element.updateMany({ wheel: wheelId }, { isActif: true });
+        
+        const wheel = await Wheel.findById(wheelId).populate('elements');
+        
+        socketIO.emitToRoom(`wheel:${wheelId}`, 'wheel:reset', { wheelId: wheelId });
+        res.status(200).json(wheel);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
-// Récupérer une roue par son ID
 exports.getWheelById = async (req, res) => {
     try {
         const wheel = await wheelService.getWheelById(req.params.id);
@@ -366,7 +410,6 @@ exports.getWheelById = async (req, res) => {
     }
 };
 
-// Mettre à jour le nombre de spins restants
 exports.updateSpinsLeft = async (req, res) => {
     try {
         const wheel = await wheelService.updateSpinsLeft(req.params.id, req.body.spinsLeft);
@@ -376,7 +419,6 @@ exports.updateSpinsLeft = async (req, res) => {
     }
 };
 
-// Mettre à jour l'élément sélectionné
 exports.updateSelectedElement = async (req, res) => {
     try {
         const wheel = await wheelService.updateSelectedElement(req.params.id, req.body.selectedElement);
@@ -386,7 +428,6 @@ exports.updateSelectedElement = async (req, res) => {
     }
 };
 
-// Récupérer tous les éléments d'une roue
 exports.getElementsByWheelId = async (req, res) => {
     try {
         const elements = await elementService.getElementsByWheelId(req.params.wheelId);
@@ -396,7 +437,6 @@ exports.getElementsByWheelId = async (req, res) => {
     }
 };
 
-// Créer un nouvel élément
 exports.createElement = async (req, res) => {
     try {
         const element = await elementService.createElement({
@@ -409,7 +449,6 @@ exports.createElement = async (req, res) => {
     }
 };
 
-// Mettre à jour un élément
 exports.updateElement = async (req, res) => {
     try {
         const element = await elementService.updateElement(req.params.elementId, req.body);
@@ -419,7 +458,6 @@ exports.updateElement = async (req, res) => {
     }
 };
 
-// Supprimer un élément
 exports.deleteElement = async (req, res) => {
     try {
         const result = await elementService.deleteElement(req.params.elementId);
@@ -429,7 +467,6 @@ exports.deleteElement = async (req, res) => {
     }
 };
 
-// Mettre à jour le statut d'un élément
 exports.updateElementStatus = async (req, res) => {
     try {
         const element = await elementService.updateElementStatus(req.params.elementId, req.body.isActif);
@@ -440,7 +477,6 @@ exports.updateElementStatus = async (req, res) => {
     }
 };
 
-// Basculer le statut favori d'une roue
 exports.toggleFavorite = async (req, res, next) => {
     try {
         const wheel = await Wheel.findById(req.params.id);
@@ -450,7 +486,6 @@ exports.toggleFavorite = async (req, res, next) => {
         wheel.isFavorite = !wheel.isFavorite;
         await wheel.save();
         
-        // Récupérer les éléments de la roue
         const elements = await Element.find({ wheel: wheel._id });
         wheel.elements = elements;
         
@@ -461,7 +496,6 @@ exports.toggleFavorite = async (req, res, next) => {
     }
 };
 
-// Récupérer uniquement les roues favorites
 exports.getFavoriteWheels = async (req, res, next) => {
     try {
         const wheels = await Wheel.find({ isFavorite: true }).populate('elements');
