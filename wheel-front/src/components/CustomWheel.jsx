@@ -53,6 +53,62 @@ const CustomWheel = ({
         return { r: 255, g: 105, b: 180 };
     }, []);
 
+    // Fonction pour ajuster le texte à la section
+    const adjustTextToSection = useCallback((ctx, text, maxWidth, maxHeight) => {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        let fontSize = 18; // Taille de départ
+        
+        // Commencer par une taille raisonnable et ajuster si nécessaire
+        ctx.font = `bold ${fontSize}px Arial`;
+        
+        // Fonction pour calculer les lignes avec une taille donnée
+        const calculateLines = (size) => {
+            ctx.font = `bold ${size}px Arial`;
+            const testLines = [];
+            let testLine = '';
+            
+            for (let word of words) {
+                const testWidth = ctx.measureText(testLine + word + ' ').width;
+                if (testWidth > maxWidth && testLine !== '') {
+                    testLines.push(testLine.trim());
+                    testLine = word + ' ';
+                } else {
+                    testLine += word + ' ';
+                }
+            }
+            if (testLine.trim() !== '') {
+                testLines.push(testLine.trim());
+            }
+            return testLines;
+        };
+        
+        // Ajuster la taille jusqu'à ce que tout rentre
+        let testLines = calculateLines(fontSize);
+        while ((testLines.length * (fontSize + 2)) > maxHeight && fontSize > 10) {
+            fontSize -= 1;
+            testLines = calculateLines(fontSize);
+        }
+        
+        // Si le texte est encore trop long, le tronquer intelligemment
+        if (testLines.length * (fontSize + 2) > maxHeight) {
+            const maxLines = Math.floor(maxHeight / (fontSize + 2));
+            testLines = testLines.slice(0, maxLines);
+            if (testLines.length > 0) {
+                const lastLine = testLines[testLines.length - 1];
+                if (lastLine.length > 15) {
+                    testLines[testLines.length - 1] = lastLine.substring(0, 12) + '...';
+                }
+            }
+        }
+        
+        return {
+            lines: testLines,
+            fontSize: fontSize
+        };
+    }, []);
+
     const getSelectedElement = useCallback((rotation) => {
         const normalizedRotation = ((rotation % 360) + 360) % 360;
         const anglePerElement = 360 / elements.length;
@@ -71,52 +127,24 @@ const CustomWheel = ({
         
         if (distance > radius || distance < 20) return null;
         
-        // Calculer l'angle de la souris par rapport au centre
         let mouseAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-        // Normaliser entre 0 et 360
         mouseAngle = (mouseAngle + 360) % 360;
         
-        // Ajuster pour que 0° soit en haut (au lieu de droite)
         let adjustedAngle = (mouseAngle + 90) % 360;
-        
-        // Appliquer la rotation inverse pour obtenir l'angle dans le référentiel de la roue
         let relativeAngle = (adjustedAngle - rotation + 360) % 360;
         
         const anglePerElement = 360 / elements.length;
-        
-        // Correction importante : d'après vos observations, il y a un décalage de 2.5 segments
-        // Il faut donc corriger de -2.5 segments (dans le sens anti-horaire)
-        // Pour une roue de 10 éléments (36° par segment), on corrige de -90°
-        // Pour une roue de 6 éléments (60° par segment), on corrige de -150°
         const correctionAngle = -2.5 * anglePerElement;
         let correctedAngle = (relativeAngle + correctionAngle);
-        
-        // Normaliser l'angle pour qu'il soit toujours entre 0 et 360
         correctedAngle = ((correctedAngle % 360) + 360) % 360;
         
         let elementIndex = Math.floor(correctedAngle / anglePerElement);
-        
-        // S'assurer que l'index est dans les limites
         elementIndex = Math.max(0, Math.min(elements.length - 1, elementIndex));
-        
-        console.log('Hover calculation (corrected):', {
-            mouseX, mouseY,
-            rawMouseAngle: mouseAngle.toFixed(1),
-            adjustedAngle: adjustedAngle.toFixed(1),
-            rotation: rotation.toFixed(1),
-            relativeAngle: relativeAngle.toFixed(1),
-            correctedAngle: correctedAngle.toFixed(1),
-            anglePerElement: anglePerElement.toFixed(1),
-            elementIndex,
-            elementsCount: elements.length,
-            correctionAngle: correctionAngle.toFixed(1)
-        });
         
         return elementIndex;
     }, [elements.length]);
 
     const handleMouseMove = useCallback((event) => {
-        // Permettre le hover seulement si pas de spin en cours ET que le dernier spin est complètement terminé
         if (isSpinning || isInternalAnimating || !lastSpinComplete) return;
         
         const container = containerRef.current;
@@ -132,9 +160,7 @@ const CustomWheel = ({
         
         const elementIndex = getHoveredElement(mouseX, mouseY, centerX, centerY, radius, currentRotation);
         
-        // Correction: toujours mettre à jour même si les indices sont différents
         if (elementIndex !== hoveredElementIndex) {
-            console.log('Updating hoveredElementIndex from', hoveredElementIndex, 'to', elementIndex);
             setHoveredElementIndex(elementIndex);
             
             if (elementIndex !== null && elementIndex >= 0 && onElementHover) {
@@ -167,10 +193,12 @@ const CustomWheel = ({
             
             const baseAngle = angles[index];
             const nextBaseAngle = angles[index + 1] || 360;
+            const sectionAngle = nextBaseAngle - baseAngle;
             
             const startAngle = ((baseAngle + rotation) * Math.PI) / 180;
             const endAngle = ((nextBaseAngle + rotation) * Math.PI) / 180;
             
+            // Dessiner la section
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
@@ -178,7 +206,7 @@ const CustomWheel = ({
             
             let color = customColors[index] || `hsl(${(index * 360) / elements.length}, 70%, 60%)`;
             
-            // Effet de hover seulement si toutes les conditions sont réunies
+            // Effet de hover
             if (hoveredElementIndex === index && !isSpinning && !isInternalAnimating && lastSpinComplete) {
                 ctx.shadowColor = color;
                 ctx.shadowBlur = 15;
@@ -192,10 +220,22 @@ const CustomWheel = ({
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             
+            // Calculer la position et les dimensions pour le texte
             const textAngle = (startAngle + endAngle) / 2;
-            const textRadius = radius * 0.7;
+            const textRadius = radius * 0.65; // Un peu plus près du centre
             const textX = centerX + Math.cos(textAngle) * textRadius;
             const textY = centerY + Math.sin(textAngle) * textRadius;
+            
+            // Calculer les dimensions disponibles pour le texte
+            const sectionRadians = (sectionAngle * Math.PI) / 180;
+            const maxTextWidth = Math.min(
+                radius * 0.6, // Largeur maximum basée sur le rayon
+                Math.abs(2 * Math.sin(sectionRadians / 2) * textRadius * 0.8) // Largeur de la section
+            );
+            const maxTextHeight = radius * 0.3; // Hauteur maximum
+            
+            // Ajuster le texte à la section
+            const textInfo = adjustTextToSection(ctx, element.label, maxTextWidth, maxTextHeight);
             
             ctx.save();
             ctx.translate(textX, textY);
@@ -203,23 +243,46 @@ const CustomWheel = ({
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            let label = element.label;
-            ctx.font = `bold 20px Arial`;
-            
-            const textWidth = ctx.measureText(label).width;
+            // Dessiner l'arrière-plan du texte
             ctx.save();
-            ctx.globalAlpha = 0.8;
+            ctx.globalAlpha = 0.85;
             ctx.fillStyle = '#fff';
-            ctx.fillRect(-textWidth/2 - 5, -10, textWidth + 10, 20);
+            const lineHeight = textInfo.fontSize + 2;
+            const totalHeight = textInfo.lines.length * lineHeight;
+            const backgroundPadding = 6;
+            
+            // Trouver la largeur maximum des lignes
+            ctx.font = `bold ${textInfo.fontSize}px Arial`;
+            let maxLineWidth = 0;
+            textInfo.lines.forEach(line => {
+                const lineWidth = ctx.measureText(line).width;
+                if (lineWidth > maxLineWidth) {
+                    maxLineWidth = lineWidth;
+                }
+            });
+            
+            ctx.fillRect(
+                -maxLineWidth/2 - backgroundPadding, 
+                -totalHeight/2 - backgroundPadding/2, 
+                maxLineWidth + backgroundPadding * 2, 
+                totalHeight + backgroundPadding
+            );
             ctx.restore();
             
+            // Dessiner le texte ligne par ligne
             ctx.fillStyle = '#000';
-            ctx.fillText(label, 0, 0);
+            ctx.font = `bold ${textInfo.fontSize}px Arial`;
+            
+            const startY = -(textInfo.lines.length - 1) * lineHeight / 2;
+            textInfo.lines.forEach((line, lineIndex) => {
+                const lineY = startY + lineIndex * lineHeight;
+                ctx.fillText(line, 0, lineY);
+            });
             
             ctx.restore();
             ctx.restore();
         });
-    }, [wheelSize, pointerSize, borderWidth, calculateAngles, elements, customColors, hoveredElementIndex, isSpinning, isInternalAnimating, lastSpinComplete, hexToRgb]);
+    }, [wheelSize, pointerSize, borderWidth, calculateAngles, elements, customColors, hoveredElementIndex, isSpinning, isInternalAnimating, lastSpinComplete, hexToRgb, adjustTextToSection]);
 
     const drawPointerOnly = useCallback((ctx) => {
         if (!showPointer) return;
@@ -264,14 +327,6 @@ const CustomWheel = ({
         const easeOut = (t) => 1 - Math.pow(1 - t, 3);
         const newRotation = currentRotation + (targetRotation - currentRotation) * easeOut(progress);
         
-        console.log('🔄 Animation frame:', {
-            elapsed: elapsed.toFixed(0),
-            progress: progress.toFixed(3),
-            currentRotation: currentRotation.toFixed(1),
-            targetRotation: targetRotation.toFixed(1),
-            newRotation: newRotation.toFixed(1)
-        });
-        
         setCurrentRotation(newRotation);
         
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
@@ -282,20 +337,14 @@ const CustomWheel = ({
         if (progress < 1) {
             animationRef.current = requestAnimationFrame(() => animate(startTime, targetRotation));
         } else {
-            // Animation terminée - réinitialiser tous les états
-            console.log('✅ Animation completed. Final rotation:', newRotation.toFixed(1));
             setIsInternalAnimating(false);
-            
-            // Reset immédiat pour réactiver le hover
             setLastSpinComplete(true);
             spinStartedRef.current = false;
             
-            // Forcer un redraw pour réactiver le hover
             const wheelCtx = wheelCanvasRef.current?.getContext('2d');
             if (wheelCtx) {
                 drawWheelOnly(wheelCtx, newRotation);
             }
-            console.log('🎯 Hover re-enabled with rotation:', newRotation.toFixed(1));
             
             const selectedElement = getSelectedElement(newRotation);
             onSpinEnd && onSpinEnd(selectedElement);
@@ -307,7 +356,6 @@ const CustomWheel = ({
             return;
         }
         
-        // Marquer le début du spin
         spinStartedRef.current = true;
         setLastSpinComplete(false);
         setIsInternalAnimating(true);
@@ -329,7 +377,6 @@ const CustomWheel = ({
     // Gérer le déclenchement du spin depuis l'extérieur
     useEffect(() => {
         if (isSpinning && lastSpinComplete && !isInternalAnimating && elements.length > 0) {
-            // Démarrer le spin immédiatement sans délai
             startSpin();
         }
     }, [isSpinning, lastSpinComplete, isInternalAnimating, elements.length, startSpin]);
@@ -337,7 +384,6 @@ const CustomWheel = ({
     // Reset quand isSpinning devient false
     useEffect(() => {
         if (!isSpinning && !isInternalAnimating) {
-            // Reset immédiat sans délai
             setLastSpinComplete(true);
             spinStartedRef.current = false;
         }
@@ -358,8 +404,6 @@ const CustomWheel = ({
         const pointerCtx = pointerCanvasRef.current?.getContext('2d');
         
         if (wheelCtx && pointerCtx && elements.length > 0) {
-            // Debug: vérifier la rotation actuelle
-            console.log('🎨 Redrawing with rotation:', currentRotation.toFixed(1));
             drawWheelOnly(wheelCtx, currentRotation);
             drawPointerOnly(pointerCtx);
         }
@@ -367,7 +411,6 @@ const CustomWheel = ({
 
     // Initialisation
     useEffect(() => {
-        // Initialisation immédiate sans délai
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
         const pointerCtx = pointerCanvasRef.current?.getContext('2d');
         
