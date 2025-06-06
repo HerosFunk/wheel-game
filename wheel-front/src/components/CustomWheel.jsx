@@ -298,12 +298,18 @@ const CustomWheel = ({
 
     // Démarrer la rotation (appelé depuis l'extérieur via isSpinning)
     const startSpin = () => {
-        if (disabled || isAnimating) return;
+        console.log("startSpin called - disabled:", disabled, "isAnimating:", isAnimating);
+        if (disabled || isAnimating) {
+            console.log("Spin blocked in startSpin");
+            return;
+        }
         
+        console.log("Starting wheel animation");
         setIsAnimating(true);
         onSpinStart && onSpinStart();
         
         const randomRotation = currentRotation + (Math.random() * 360 + 360 * spinSpeed);
+        console.log("Setting rotation to:", randomRotation);
         setRotation(randomRotation);
         
         animationRef.current = requestAnimationFrame(() => animate(Date.now()));
@@ -311,10 +317,12 @@ const CustomWheel = ({
 
     // Effet pour déclencher le spin quand isSpinning change
     useEffect(() => {
+        console.log("isSpinning changed:", isSpinning, "isAnimating:", isAnimating);
         if (isSpinning && !isAnimating) {
+            console.log("Starting spin animation");
             startSpin();
         }
-    }, [isSpinning]);
+    }, [isSpinning, isAnimating]);
 
     // Nettoyage
     useEffect(() => {

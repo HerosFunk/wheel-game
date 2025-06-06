@@ -193,17 +193,30 @@ const WheelDetails = () => {
   }, [isSocketReady, spinsLeft, userRole, wheel, socket]);
 
   const handleSpin = async () => {
-    if (mustSpin || !wheel || spinsLeft === "0") return;
+    console.log("handleSpin called, mustSpin:", mustSpin, "canSpin:", canSpin);
+    
+    if (mustSpin || !wheel || spinsLeft === "0") {
+      console.log("Spin blocked - mustSpin:", mustSpin, "wheel:", !!wheel, "spinsLeft:", spinsLeft);
+      return;
+    }
 
     try {
+      console.log("Starting spin...");
       setShowConfetti(false);
-      // Appeler l'API pour faire tourner la roue
-      await spinWheel(wheelId);
-      // L'événement socket déclenchera le spin visuel
-      fetchWheel(); // Rafraîchir les données de la roue
+      
+      // Déclencher directement l'animation visuelle d'abord
+      setMustSpin(true);
+      
+      // Puis appeler l'API en arrière-plan
+      const response = await spinWheel(wheelId);
+      console.log("API response:", response);
+      
+      // Rafraîchir les données de la roue
+      await fetchWheel();
     } catch (error) {
+      console.error("Error during spin:", error);
       setErrorMessage("Erreur lors de la rotation de la roue");
-      console.error("Erreur:", error);
+      setMustSpin(false); // Arrêter le spin en cas d'erreur
     }
   };
 
@@ -212,6 +225,11 @@ const WheelDetails = () => {
     setMustSpin(false); // Arrêter le spin
     setSelectedElement(element);
     setShowConfetti(true);
+    
+    // Petit délai avant de cacher les confettis
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 3000);
   };
 
   const handleSpinStart = () => {
@@ -275,6 +293,7 @@ const WheelDetails = () => {
 
   // Vérifier si l'utilisateur peut faire tourner la roue
   const canSpin = spinsLeft !== "0" && !mustSpin && wheel.elements.some(el => el.isActif);
+  const wheelDisabled = !canSpin && !mustSpin; // Ne pas désactiver pendant l'animation
 
   return (
     <div className="WheelDetails">
@@ -284,20 +303,34 @@ const WheelDetails = () => {
         </Link>
       </div>
 
-      <h1 className="wheel-title">{wheel.name}</h1>
+      <div className="wheel-header">
+        <h1 className="wheel-title">{wheel.name.toUpperCase()}</h1>
+      </div>
 
-      <div className="wheel-info">
-        <p>
-          <strong>Number of Spins:</strong>{" "}
-          {wheel.numberOfSpins === -1 ? "Unlimited" : wheel.numberOfSpins}
-        </p>
-        <p>
-          <strong>Remaining Spins:</strong> {spinsLeft === "Unlimited" ? "Unlimited" : spinsLeft}
-        </p>
-        <p>
-          <strong>Remove After Selection:</strong>{" "}
-          {wheel.removeAfterSelection ? "Yes" : "No"}
-        </p>
+      <div className="wheel-info-card">
+        <div className="info-item">
+          <div className="info-icon">🎯</div>
+          <div className="info-content">
+            <span className="info-label">Total Spins</span>
+            <span className="info-value">{wheel.numberOfSpins === -1 ? "Unlimited" : wheel.numberOfSpins}</span>
+          </div>
+        </div>
+        
+        <div className="info-item">
+          <div className="info-icon">⏳</div>
+          <div className="info-content">
+            <span className="info-label">Remaining</span>
+            <span className="info-value">{spinsLeft === "Unlimited" ? "Unlimited" : spinsLeft}</span>
+          </div>
+        </div>
+        
+        <div className="info-item">
+          <div className="info-icon">{wheel.removeAfterSelection ? "🗑️" : "🔄"}</div>
+          <div className="info-content">
+            <span className="info-label">Remove After Selection</span>
+            <span className="info-value">{wheel.removeAfterSelection ? "Yes" : "No"}</span>
+          </div>
+        </div>
       </div>
 
       <div className="wheel-section-layout">
@@ -312,7 +345,7 @@ const WheelDetails = () => {
             wheelSize={500} // Réduit de 600 à 500
             borderWidth={0} // Suppression complète du border
             customColors={wheel.elements.filter(el => el.isActif).map(element => element.color)}
-            disabled={!canSpin}
+            disabled={wheelDisabled} // Utiliser la nouvelle variable
             onElementHover={setHoveredElement}
           />
         </div>
@@ -321,8 +354,13 @@ const WheelDetails = () => {
         <div className="spin-controls">
           <button 
             className={`spin-button-large ${!canSpin ? 'disabled' : ''}`}
-            onClick={handleSpin}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSpin();
+            }}
             disabled={!canSpin}
+            type="button"
           >
             {mustSpin ? 'SPINNING...' : 'SPIN'}
           </button>
