@@ -460,7 +460,7 @@ const EditWheel = () => {
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
           <input
             type="text"
-            placeholder="Element name (e.g: Pizza, Option A...)"
+            placeholder="Element name"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAddSegment()}
@@ -524,17 +524,26 @@ const EditWheel = () => {
             <p>Use the form above to add segments</p>
           </div>
         ) : (
-          <div className="elements-grid">
+          <div className="elements-grid" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '12px 24px',
+            rowGap: '40px',
+            padding: '20px 0'
+          }}>
             {segments.map((segment, index) => (
               <div 
                 key={segment.id || index} 
                 className={`element-card ${segment.isActif === false ? 'disabled' : ''}`}
                 style={{
                   borderLeft: `6px solid ${segment.isActif === false ? '#666' : '#ffb300'}`,
-                  opacity: segment.isActif === false ? 0.6 : 1
+                  opacity: segment.isActif === false ? 0.6 : 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
                 }}
               >
-                <div className="element-header">
+                <div className="element-header" style={{ marginBottom: '20px' }}>
                   <div 
                     className="element-color-indicator" 
                     style={{ 
@@ -602,7 +611,12 @@ const EditWheel = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  gap: '8px', 
+                  marginTop: 'auto'
+                }}>
                   <button
                     onClick={() => handleEditClick(index)}
                     disabled={editingIndex === index}
@@ -614,7 +628,8 @@ const EditWheel = () => {
                       padding: '6px 12px',
                       fontSize: '0.8rem',
                       cursor: editingIndex === index ? 'not-allowed' : 'pointer',
-                      opacity: editingIndex === index ? 0.5 : 1
+                      opacity: editingIndex === index ? 0.5 : 1,
+                      width: '100%'
                     }}
                   >
                     Edit
@@ -631,7 +646,8 @@ const EditWheel = () => {
                       padding: '6px 12px',
                       fontSize: '0.8rem',
                       cursor: (editingIndex === index || (segment.id && segment.id.toString().startsWith('temp_'))) ? 'not-allowed' : 'pointer',
-                      opacity: (editingIndex === index || (segment.id && segment.id.toString().startsWith('temp_'))) ? 0.5 : 1
+                      opacity: (editingIndex === index || (segment.id && segment.id.toString().startsWith('temp_'))) ? 0.5 : 1,
+                      width: '100%'
                     }}
                     title={segment.id && segment.id.toString().startsWith('temp_') ? 'Save the wheel first to activate/deactivate this element' : ''}
                   >
@@ -649,7 +665,8 @@ const EditWheel = () => {
                       padding: '6px 12px',
                       fontSize: '0.8rem',
                       cursor: editingIndex === index ? 'not-allowed' : 'pointer',
-                      opacity: editingIndex === index ? 0.5 : 1
+                      opacity: editingIndex === index ? 0.5 : 1,
+                      width: '100%'
                     }}
                   >
                     Delete

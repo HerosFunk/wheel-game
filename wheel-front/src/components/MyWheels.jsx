@@ -134,31 +134,39 @@ const MyWheels = () => {
         ) : wheels.length === 0 ? (
           <div className="no-wheels">
             <p>No wheel found</p>
-            <Link to="/create">
-              <CustomButton text="Créer une roue" />
+            <Link to="/create-wheel">
+              <CustomButton text="Create a wheel" />
             </Link>
           </div>
         ) : (
-          wheels.map((wheel) => (
-            <div key={wheel._id} className="wheel-card">
-              <div className="wheel-card-header">
-                <h2>{wheel.name}</h2>
-                <button 
-                  onClick={() => handleToggleFavorite(wheel._id)}
-                  className={`favorite-button ${wheel.isFavorite ? 'active' : ''}`}
-                >
-                  {wheel.isFavorite ? '★' : '☆'}
-                </button>
+          <>
+            {wheels.map((wheel) => (
+              <div key={wheel._id} className="wheel-card">
+                <div className="wheel-card-header">
+                  <h2>{wheel.name}</h2>
+                  <button 
+                    onClick={() => handleToggleFavorite(wheel._id)}
+                    className={`favorite-button ${wheel.isFavorite ? 'active' : ''}`}
+                  >
+                    {wheel.isFavorite ? '★' : '☆'}
+                  </button>
+                </div>
+                <p>Spins remaining: {wheel.numberOfSpinsLeft === -1 ? '∞' : wheel.numberOfSpinsLeft}</p>
+                <p>Elements: {wheel.elements?.length || 0}</p>
+                <div className="wheel-card-actions">
+                  <button onClick={() => navigate(`/wheel/${wheel._id}`)}>View</button>
+                  <button onClick={() => navigate(`/edit-wheel/${wheel._id}`)}>Edit</button>
+                  <button onClick={() => handleDelete(wheel._id)}>Delete</button>
+                </div>
               </div>
-              <p>Spins remaining: {wheel.numberOfSpinsLeft === -1 ? '∞' : wheel.numberOfSpinsLeft}</p>
-              <p>Elements: {wheel.elements?.length || 0}</p>
-              <div className="wheel-card-actions">
-                <button onClick={() => navigate(`/wheel/${wheel._id}`)}>View</button>
-                <button onClick={() => navigate(`/edit-wheel/${wheel._id}`)}>Edit</button>
-                <button onClick={() => handleDelete(wheel._id)}>Delete</button>
+            ))}
+            <div className="wheel-card add-card" onClick={() => navigate('/create-wheel')} tabIndex={0} role="button">
+              <div className="add-card-content">
+                <span className="add-icon">＋</span>
+                <span>Create a wheel</span>
               </div>
             </div>
-          ))
+          </>
         )}
       </div>
     </div>
