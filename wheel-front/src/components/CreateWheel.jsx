@@ -138,53 +138,60 @@ const CreateWheel = () => {
   };
 
   const handleCreateWheel = async () => {
-    setErrorMessage("");
+  setErrorMessage("");
 
-    if (!nameValue.trim()) {
-      setErrorMessage("Wheel name is required.");
-      return;
-    }
+  if (!nameValue.trim()) {
+    setErrorMessage("Wheel name is required.");
+    return;
+  }
 
-    if (segments.length < 2) {
-      setErrorMessage("At least 2 segments are required.");
-      return;
-    }
+  if (segments.length < 2) {
+    setErrorMessage("At least 2 segments are required.");
+    return;
+  }
 
-    if (!options.infinitySpin && (!spinLimit || parseInt(spinLimit) <= 0)) {
-      setErrorMessage("A valid spin limit is required if Infinity Spin is disabled.");
-      return;
-    }
+  if (!options.infinitySpin && (!spinLimit || parseInt(spinLimit) <= 0)) {
+    setErrorMessage("A valid spin limit is required if Infinity Spin is disabled.");
+    return;
+  }
 
-    const wheelData = {
-      name: nameValue,
-      removeAfterSelection: options.option1,
-      numberOfSpins: options.infinitySpin ? -1 : parseInt(spinLimit),
-      elements: segments.map(segment => ({
-        name: segment.name,
-        weight: segment.weight
-      }))
-    };
-
-    try {
-      const response = await fetch(wheelId ? `${API_URL}/wheels/${wheelId}` : `${API_URL}/wheels`, {
-        method: wheelId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(wheelData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-
-      const createdWheel = await response.json();
-      navigate(`/wheel/${createdWheel.id}`);
-    } catch (error) {
-      setErrorMessage(`Error creating wheel: ${error.message}`);
-    }
+  const wheelData = {
+    name: nameValue,
+    removeAfterSelection: options.option1,
+    numberOfSpins: options.infinitySpin ? -1 : parseInt(spinLimit),
+    // CORRECTION: Changer 'elements' pour correspondre à ce que le backend attend
+    elements: segments.map(segment => ({
+      name: segment.name,  // Le backend attend 'name' dans la boucle de création
+      weight: segment.weight || 1
+    }))
   };
+
+  console.log("Sending wheel data:", wheelData); // Debug
+
+  try {
+    const response = await fetch(wheelId ? `${API_URL}/wheels/${wheelId}` : `${API_URL}/wheels`, {
+      method: wheelId ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(wheelData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    const createdWheel = await response.json();
+    console.log("Created wheel response:", createdWheel); // Debug
+    navigate(`/wheel/${createdWheel.id || createdWheel._id}`);
+  } catch (error) {
+    console.error("Full error:", error);
+    setErrorMessage(`Error creating wheel: ${error.message}`);
+  }
+};
 
   return (
     <div className="CreateWheel">

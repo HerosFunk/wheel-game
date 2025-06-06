@@ -25,11 +25,6 @@ const wheelSchema = new mongoose.Schema({
         type: Number,
         default: null
     },
-    
-    elements: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Element'
-    }],
     isFavorite: {
         type: Boolean,
         default: false
@@ -51,7 +46,16 @@ const wheelSchema = new mongoose.Schema({
         default: Date.now
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// CORRECTION: Ajouter la relation virtuelle pour les éléments
+wheelSchema.virtual('elements', {
+    ref: 'Element',
+    localField: '_id',
+    foreignField: 'wheel'
 });
 
 const Wheel = mongoose.model('Wheel', wheelSchema);

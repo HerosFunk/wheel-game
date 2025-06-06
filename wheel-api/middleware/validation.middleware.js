@@ -17,7 +17,7 @@ const validateWheel = (req, res, next) => {
 
     // Validation des éléments
     for (const element of elements) {
-        if (!element.name || element.name.trim().length === 0) {
+        if (!element.label || element.label.trim().length === 0) {
             return next(new AppError('Chaque élément doit avoir un nom', 400));
         }
         if (element.weight !== undefined && (element.weight < 1 || element.weight > 9)) {
