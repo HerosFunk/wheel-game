@@ -1,0 +1,118 @@
+.custom-wheel-container {
+    position: relative;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.custom-wheel {
+    transition: transform 0.1s ease-out;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.custom-wheel.spinning {
+    animation: spin 0.5s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin-button {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #007bff;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.spin-button:hover {
+    background-color: #0056b3;
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+.spin-button:active {
+    transform: translateX(-50%) scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation de confetti pour le résultat */
+@keyframes confetti {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #f00;
+    animation: confetti 3s ease-in-out forwards;
+}
+
+/* Styles pour le mode mobile */
+@media (max-width: 768px) {
+    .custom-wheel-container {
+        transform: scale(0.8);
+    }
+
+    .spin-button {
+        bottom: -50px;
+        padding: 10px 25px;
+        font-size: 16px;
+    }
+}
+
+/* Styles pour le mode tablette */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .custom-wheel-container {
+        transform: scale(0.9);
+    }
+}
+
+.custom-wheel-segment-text {
+    font-size: 1.1rem;
+    font-weight: bold;
+    fill: #222;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    paint-order: stroke;
+    stroke: #fff;
+    stroke-width: 0.5px;
+    filter: drop-shadow(0 1px 2px #0008);
+    /* Pour le fond blanc semi-transparent */
+    background: rgba(255,255,255,0.7);
+    border-radius: 6px;
+    padding: 2px 8px;
+    /* Pour le SVG, le fond doit être géré dans le composant, mais on documente ici */
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre;
+}
+
+/* Pour le SVG, il faut que le composant applique une <rect> blanche derrière le texte si possible */ 

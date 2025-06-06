@@ -1,50 +1,62 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { createServer } = require('node:http');
-require('dotenv').config();
-
-const sequelize = require('./config/database.config');
-
-const Wheel = require('./models/wheel.model');
-const Element = require('./models/element.model');
-
-async function syncDatabase() {
-    try {
-        await Wheel.sync();
-        await Element.sync();
-        await sequelize.sync();
-        console.log('Database synchronized successfully.');
-    } catch (error) {
-        console.error('Error synchronizing database:', error);
-    }
-}
-syncDatabase();
+const connectDB = require('./config/database.config');
+const { errorHandler } = require('./middleware/error.middleware');
+const { apiLimiter, spinLimiter } = require('./middleware/rateLimit.middleware');
+const socketIO = require('./socket/socket');
 
 const app = express();
-const server = createServer(app);
 
+// Connexion à la base de données
+connectDB();
+
+// Middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-    origin: "*"/*process.env.URL_FRONT || 'http://localhost:9000*/
-}));
 
+// Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/wheels', require('./routes/wheel.routes'));
 
-
-const io = require('./socket/socket').init(server);
-io.on('connection', (socket) => {
-    console.log('a user connected');
+// Gestion des erreurs 404
+app.use((req, res, next) => {
+    res.status(404).json({
+        status: 'error',
+        message: 'Route non trouvée'
+    });
 });
 
-server.listen(process.env.PORT || 3001, () => {
-    console.log(`Server running on port ${process.env.PORT || 3001}`);
+// Gestionnaire d'erreurs global
+app.use(errorHandler);
+
+// Démarrage du serveur
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+    console.log(`Serveur démarré sur le port ${PORT}`);
 });
 
-const authRoutes = require('./routes/auth.route');
-const wheelRoutes = require('./routes/wheel.route');
+// Initialisation des sockets
+socketIO.init(server);
 
-app.use('/auth', authRoutes);
-app.use('/wheels', wheelRoutes);
+// Gestion des erreurs non capturées
+process.on('uncaughtException', err => {
+    console.error('UNCAUGHT EXCEPTION! 💥 Arrêt du serveur...');
+    console.error(err.name, err.message);
+    process.exit(1);
+});
 
-exports.io = io;
+process.on('unhandledRejection', err => {
+    console.error('UNHANDLED REJECTION! 💥 Arrêt du serveur...');
+    console.error(err.name, err.message);
+    server.close(() => {
+        process.exit(1);
+    });
+});
+
+module.exports = app;

@@ -5,7 +5,7 @@ import AppRoutes from "./Routes";
 import "./App.css";
 import { socket } from './socket';
 
-const API_URL = "https://wheel-game.azurewebsites.net";
+const API_URL = "http://localhost:3000/api";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -41,7 +41,7 @@ function App() {
     setErrorMessage("");
 
     try {
-      const response = await fetch(`${API_URL}/auth/verify-password`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

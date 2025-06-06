@@ -1,34 +1,40 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database.config');
+const mongoose = require('mongoose');
 
-const Element = sequelize.define('Element', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
-    wheelId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+const elementSchema = new mongoose.Schema({
+    wheel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wheel',
+        required: true
     },
     label: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true,
+        trim: true
     },
     isActif: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: true
+        type: Boolean,
+        required: true,
+        default: true
     },
     weight: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 1,
-        validate: {
-            min: 1,
-            max: 9
-        }
+        type: Number,
+        required: true,
+        default: 1,
+        min: 1,
+        max: 9
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
+}, {
+    timestamps: true
 });
+
+const Element = mongoose.model('Element', elementSchema);
 
 module.exports = Element;
