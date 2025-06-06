@@ -53,17 +53,17 @@ const CustomWheel = ({
         return { r: 255, g: 105, b: 180 };
     }, []);
 
-    // Fonction pour ajuster le texte à la section
+    // Function to adjust text to section
     const adjustTextToSection = useCallback((ctx, text, maxWidth, maxHeight) => {
         const words = text.split(' ');
         const lines = [];
         let currentLine = '';
-        let fontSize = 18; // Taille de départ
+        let fontSize = 18; // Starting size
         
-        // Commencer par une taille raisonnable et ajuster si nécessaire
+        // Start with a reasonable size and adjust if needed
         ctx.font = `bold ${fontSize}px Arial`;
         
-        // Fonction pour calculer les lignes avec une taille donnée
+        // Function to calculate lines with a given size
         const calculateLines = (size) => {
             ctx.font = `bold ${size}px Arial`;
             const testLines = [];
@@ -84,14 +84,14 @@ const CustomWheel = ({
             return testLines;
         };
         
-        // Ajuster la taille jusqu'à ce que tout rentre
+        // Adjust size until everything fits
         let testLines = calculateLines(fontSize);
         while ((testLines.length * (fontSize + 2)) > maxHeight && fontSize > 10) {
             fontSize -= 1;
             testLines = calculateLines(fontSize);
         }
         
-        // Si le texte est encore trop long, le tronquer intelligemment
+        // If text is still too long, truncate intelligently
         if (testLines.length * (fontSize + 2) > maxHeight) {
             const maxLines = Math.floor(maxHeight / (fontSize + 2));
             testLines = testLines.slice(0, maxLines);
@@ -113,8 +113,8 @@ const CustomWheel = ({
         const normalizedRotation = ((rotation % 360) + 360) % 360;
         const anglePerElement = 360 / elements.length;
         
-        const flècheAngle = 270;
-        const segmentAtPointer = (flècheAngle - normalizedRotation + 360) % 360;
+        const arrowAngle = 270;
+        const segmentAtPointer = (arrowAngle - normalizedRotation + 360) % 360;
         const selectedIndex = Math.floor(segmentAtPointer / anglePerElement) % elements.length;
         
         return elements[selectedIndex];
@@ -180,7 +180,7 @@ const CustomWheel = ({
         }
     }, [isSpinning, isInternalAnimating, lastSpinComplete, onElementHover]);
 
-    // Fonction pour formater le texte du tooltip sur plusieurs lignes
+    // Function for formatting tooltip text on multiple lines
     const formatTooltipText = useCallback((text, maxCharsPerLine = 25) => {
         if (!text || text.length <= maxCharsPerLine) {
             return [text];
@@ -199,7 +199,7 @@ const CustomWheel = ({
                     lines.push(currentLine);
                     currentLine = word;
                 } else {
-                    // Si un seul mot est trop long, le couper
+                    // If a single word is too long, cut it
                     if (word.length > maxCharsPerLine) {
                         lines.push(word.substring(0, maxCharsPerLine - 3) + '...');
                         currentLine = '';
@@ -235,7 +235,7 @@ const CustomWheel = ({
             const startAngle = ((baseAngle + rotation) * Math.PI) / 180;
             const endAngle = ((nextBaseAngle + rotation) * Math.PI) / 180;
             
-            // Dessiner la section
+            // Draw section
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
@@ -243,7 +243,7 @@ const CustomWheel = ({
             
             let color = customColors[index] || `hsl(${(index * 360) / elements.length}, 70%, 60%)`;
             
-            // Effet de hover
+            // Hover effect
             if (hoveredElementIndex === index && !isSpinning && !isInternalAnimating && lastSpinComplete) {
                 ctx.shadowColor = color;
                 ctx.shadowBlur = 15;
@@ -257,21 +257,21 @@ const CustomWheel = ({
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             
-            // Calculer la position et les dimensions pour le texte
+            // Calculate position and dimensions for text
             const textAngle = (startAngle + endAngle) / 2;
-            const textRadius = radius * 0.65; // Un peu plus près du centre
+            const textRadius = radius * 0.65; // A bit closer to center
             const textX = centerX + Math.cos(textAngle) * textRadius;
             const textY = centerY + Math.sin(textAngle) * textRadius;
             
-            // Calculer les dimensions disponibles pour le texte
+            // Calculate available dimensions for text
             const sectionRadians = (sectionAngle * Math.PI) / 180;
             const maxTextWidth = Math.min(
-                radius * 0.6, // Largeur maximum basée sur le rayon
-                Math.abs(2 * Math.sin(sectionRadians / 2) * textRadius * 0.8) // Largeur de la section
+                radius * 0.6, // Maximum width based on radius
+                Math.abs(2 * Math.sin(sectionRadians / 2) * textRadius * 0.8) // Section width
             );
-            const maxTextHeight = radius * 0.3; // Hauteur maximum
+            const maxTextHeight = radius * 0.3; // Maximum height
             
-            // Ajuster le texte à la section
+            // Adjust text to section
             const textInfo = adjustTextToSection(ctx, element.label, maxTextWidth, maxTextHeight);
             
             ctx.save();
@@ -280,7 +280,7 @@ const CustomWheel = ({
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Dessiner l'arrière-plan du texte
+            // Draw text background
             ctx.save();
             ctx.globalAlpha = 0.85;
             ctx.fillStyle = '#fff';
@@ -288,7 +288,7 @@ const CustomWheel = ({
             const totalHeight = textInfo.lines.length * lineHeight;
             const backgroundPadding = 6;
             
-            // Trouver la largeur maximum des lignes
+            // Find maximum width of lines
             ctx.font = `bold ${textInfo.fontSize}px Arial`;
             let maxLineWidth = 0;
             textInfo.lines.forEach(line => {
@@ -306,7 +306,7 @@ const CustomWheel = ({
             );
             ctx.restore();
             
-            // Dessiner le texte ligne par ligne
+            // Draw text line by line
             ctx.fillStyle = '#000';
             ctx.font = `bold ${textInfo.fontSize}px Arial`;
             
@@ -411,14 +411,14 @@ const CustomWheel = ({
         animationRef.current = requestAnimationFrame(() => animate(Date.now(), totalRotation));
     }, [disabled, isInternalAnimating, elements.length, onElementHover, onSpinStart, spinSpeed, currentRotation, animate]);
 
-    // Gérer le déclenchement du spin depuis l'extérieur
+    // Handle external spin trigger
     useEffect(() => {
         if (isSpinning && lastSpinComplete && !isInternalAnimating && elements.length > 0) {
             startSpin();
         }
     }, [isSpinning, lastSpinComplete, isInternalAnimating, elements.length, startSpin]);
 
-    // Reset quand isSpinning devient false
+    // Reset when isSpinning becomes false
     useEffect(() => {
         if (!isSpinning && !isInternalAnimating) {
             setLastSpinComplete(true);
@@ -426,7 +426,7 @@ const CustomWheel = ({
         }
     }, [isSpinning, isInternalAnimating]);
 
-    // Nettoyage des animations
+    // Clean up animations
     useEffect(() => {
         return () => {
             if (animationRef.current) {
@@ -435,7 +435,7 @@ const CustomWheel = ({
         };
     }, []);
 
-    // Redessiner quand nécessaire
+    // Redraw when needed
     useEffect(() => {
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
         const pointerCtx = pointerCanvasRef.current?.getContext('2d');
@@ -446,7 +446,7 @@ const CustomWheel = ({
         }
     }, [elements, currentRotation, hoveredElementIndex, lastSpinComplete, drawWheelOnly, drawPointerOnly]);
 
-    // Initialisation
+    // Initialization
     useEffect(() => {
         const wheelCtx = wheelCanvasRef.current?.getContext('2d');
         const pointerCtx = pointerCanvasRef.current?.getContext('2d');

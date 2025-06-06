@@ -30,8 +30,8 @@ const MyWheels = () => {
         setWheels([]);
       }
     } catch (error) {
-      setError("Une erreur est survenue lors du chargement des roues");
-      console.error("Erreur lors de la récupération des roues:", error);
+      setError("An error occurred while fetching wheels");
+      console.error("Error fetching wheels:", error);
       setWheels([]);
     } finally {
       setLoading(false);
@@ -56,8 +56,8 @@ const MyWheels = () => {
       await deleteWheel(wheelId);
       setWheels((prevWheels) => prevWheels.filter((wheel) => wheel._id !== wheelId));
     } catch (error) {
-      setError("Une erreur est survenue lors de la suppression de la roue");
-      console.error("Erreur lors de la suppression de la roue:", error);
+      setError("An error occurred while deleting the wheel");
+      console.error("Error deleting the wheel:", error);
     }
   };
 
@@ -76,8 +76,8 @@ const MyWheels = () => {
           wheel._id === wheelId ? { ...wheel, isFavorite: !wheel.isFavorite } : wheel
         )
       );
-      setError("Une erreur est survenue lors de la mise à jour du favori");
-      console.error("Erreur lors de la mise à jour du favori:", error);
+      setError("An error occurred while updating favorite status");
+      console.error("Error updating favorite status:", error);
     }
   };
 
@@ -110,7 +110,7 @@ const MyWheels = () => {
             onClick={() => handleSortChange('name')}
             className={`sort-button ${sortBy === 'name' ? 'active' : ''}`}
           >
-            Nom {getSortIcon('name')}
+            Name {getSortIcon('name')}
           </button>
           <button 
             onClick={() => handleSortChange('createdAt')}

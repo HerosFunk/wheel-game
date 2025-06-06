@@ -244,174 +244,319 @@ const CreateWheel = () => {
         </div>
       )}
 
-<div className="input-section" style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Enter your wheel name"
-          value={nameValue}
-          onChange={(e) => setNameValue(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
-        />
-        
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '10px' }}>
-          <input
-            type="text"
-            placeholder="Enter a segment name"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-grow p-2 border rounded"
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+      <div className="wheel-info-card">
+        <div className="info-item">
+          <div className="info-icon">🎯</div>
+          <div className="info-content">
+            <span className="info-label">Wheel Name</span>
             <input
-              type="number"
-              min="1"
-              max="9"
-              value={weightValue}
-              onChange={(e) => setWeightValue(e.target.value)}
-              style={{ width: '80px' }}
-              className="p-2 border rounded"
+              type="text"
+              placeholder="Enter your wheel name"
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              className="info-value"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '1.3rem',
+                fontWeight: 'bold',
+                outline: 'none',
+                width: '100%'
+              }}
             />
-            <button 
-              onClick={handleAddSegment}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Add
-            </button>
+          </div>
+        </div>
+
+        <div className="info-item">
+          <div className="info-icon">📊</div>
+          <div className="info-content">
+            <span className="info-label">Total Elements</span>
+            <span className="info-value">{segments.length}</span>
           </div>
         </div>
       </div>
 
-      <ul style={{ 
-        listStyle: 'none', 
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-      }}>
-        {segments.map((segment, index) => (
-          <li className="CreateWheelItem" key={index} style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'minmax(200px, 1fr) auto auto auto auto',
-            gap: '10px',
-            alignItems: 'center',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '4px',
-          }}>
-            {editingIndex === index ? (
-              <input
-                type="text"
-                value={editingValue}
-                onChange={(e) => setEditingValue(e.target.value)}
-                onBlur={() => handleEditSave(index)}
-                onKeyPress={(e) => e.key === 'Enter' && handleEditSave(index)}
-                className="p-1 border rounded"
-                autoFocus
-              />
-            ) : (
-              <span style={{color:'black', marginLeft:'8px'}}>{ segment.name}</span>
-            )}
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="number"
-                min="1"
-                max="9"
-                value={segment.weight}
-                onChange={(e) => handleWeightChange(index, e.target.value)}
-                style={{ width: '80px' }}
-                className="p-1 border rounded text-center"
-              />
-              <span style={{ minWidth: '70px' }}>
-                ({calculateProbability(segment.weight, segments)}%)
-              </span>
-            </div>
-
-            <button
-              onClick={() => handleEditClick(index)}
-              className="p-2 text-blue-600 hover:text-blue-800"
-              title="Edit"
-            >
-              <Pencil size={16} />
-            </button>
-
-            <button
-              onClick={() => handleDeleteSegment(index)}
-              className="p-2 text-red-600 hover:text-red-800"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <div>
-        <label>
+      <div className="elements-list">
+        <h3>Add New Element</h3>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
           <input
-            type="checkbox"
-            checked={options.option1}
-            onChange={() => handleCheckboxChange("option1")}
+            type="text"
+            placeholder="Element name"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddSegment()}
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              background: '#34363c',
+              border: '1px solid #444',
+              borderRadius: '8px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '1rem'
+            }}
           />
-          Remove a label after selection
-        </label>
-        <br />
-        <label>
           <input
-            type="checkbox"
-            checked={options.infinitySpin}
-            onChange={() => handleCheckboxChange("infinitySpin")}
+            type="number"
+            min="1"
+            max="9"
+            value={weightValue}
+            onChange={(e) => setWeightValue(e.target.value)}
+            placeholder="Weight"
+            style={{
+              width: '80px',
+              background: '#34363c',
+              border: '1px solid #444',
+              borderRadius: '8px',
+              padding: '12px',
+              color: '#fff',
+              fontSize: '1rem',
+              textAlign: 'center'
+            }}
           />
-          Infinity spins
-        </label>
+          <button 
+            onClick={handleAddSegment}
+            className="control-button"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            Add Element
+          </button>
+        </div>
+        <div style={{ color: '#a0a0a0', fontSize: '0.9rem', marginBottom: '20px' }}>
+          Higher weight = more likely to be selected (1-9 scale)
+        </div>
       </div>
 
-      {!options.infinitySpin && (
-        <div>
-          <label>
-            Set spin limit:{" "}
-            <input
-              type="number"
-              value={spinLimit}
-              min="1"
-              max="10000"
-              step="1"
-              placeholder="Enter spin limit"
-              onChange={(e) => setSpinLimit(e.target.value)}
-            />
-          </label>
-        </div>
-      )}
+      <div className="elements-list">
+        <h3>Wheel Elements ({segments.length})</h3>
 
-      <div>
-        <br />
-        <button 
-          style={{
-            marginRight: "10px",
-            color: "white",
-            backgroundColor: "green",
-            border: "none",
-            padding: "10px",
-            cursor: "pointer"
-          }}
-          onClick={() => {
-            if (segments.length < 2) {
-              setErrorMessage("At least 2 segments are required.");
-              return;
-            }
-            const segmentObjects = segments.map((segment) => ({
-              label: segment.name
-            }));
-
-            setWheel({
-              Elements: assignColors(segmentObjects, colorPalette),
-            });
-            setIsModalOpen(true);
-            setIsWheelVisible(true);
+        {segments.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#a0a0a0' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎯</div>
+            <p>No elements in this wheel</p>
+            <p>Use the form above to add segments</p>
+          </div>
+        ) : (
+          <div className="elements-grid" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '12px 24px',
+            rowGap: '40px',
+            padding: '20px 0'
           }}>
-          Preview
-        </button>
-        <button className="createButton" onClick={handleCreateWheel}>
-          {wheelId ? "Save Changes" : "Create"}
-        </button>
+            {segments.map((segment, index) => (
+              <div 
+                key={index} 
+                className="element-card"
+                style={{
+                  borderLeft: '6px solid #ffb300',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
+                }}
+              >
+                <div className="element-header" style={{ marginBottom: '20px' }}>
+                  <div 
+                    className="element-color-indicator" 
+                    style={{ 
+                      backgroundColor: '#ffb300',
+                      width: '12px',
+                      height: '12px'
+                    }}
+                  ></div>
+                  
+                  {editingIndex === index ? (
+                    <input
+                      type="text"
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      onBlur={() => handleEditSave(index)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') handleEditSave(index);
+                        if (e.key === 'Escape') {
+                          setEditingIndex(null);
+                          setEditingValue("");
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ffb300',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        color: '#fff',
+                        fontSize: '1rem',
+                        flex: 1
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="element-label">{segment.name}</span>
+                  )}
+                </div>
+
+                <div className="element-details" style={{ marginBottom: '4px' }}>
+                  <div className="element-weight">
+                    <span className="detail-label">Weight:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="9"
+                      value={segment.weight || 1}
+                      onChange={(e) => handleWeightChange(index, e.target.value)}
+                      disabled={editingIndex === index}
+                      style={{
+                        width: '60px',
+                        background: '#444',
+                        border: '1px solid #666',
+                        borderRadius: '4px',
+                        padding: '4px',
+                        color: '#fff',
+                        textAlign: 'center'
+                      }}
+                    />
+                  </div>
+                  <div className="element-probability">
+                    <span className="detail-label">Probability:</span>
+                    <span className="detail-value">
+                      {calculateProbability(segment.weight || 1, segments)}%
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  gap: '8px', 
+                  marginTop: 'auto'
+                }}>
+                  <button
+                    onClick={() => handleEditClick(index)}
+                    disabled={editingIndex === index}
+                    style={{
+                      background: '#6c5ce7',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      fontSize: '0.8rem',
+                      cursor: editingIndex === index ? 'not-allowed' : 'pointer',
+                      opacity: editingIndex === index ? 0.5 : 1,
+                      width: '100%'
+                    }}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteSegment(index)}
+                    disabled={editingIndex === index}
+                    style={{
+                      background: '#e74c3c',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      fontSize: '0.8rem',
+                      cursor: editingIndex === index ? 'not-allowed' : 'pointer',
+                      opacity: editingIndex === index ? 0.5 : 1,
+                      width: '100%'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="elements-list">
+        <h3>Wheel Options</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#fff', fontSize: '1rem' }}>
+            <input
+              type="checkbox"
+              checked={options.option1}
+              onChange={() => handleCheckboxChange("option1")}
+              style={{ transform: 'scale(1.2)' }}
+            />
+            Remove element after selection
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#fff', fontSize: '1rem' }}>
+            <input
+              type="checkbox"
+              checked={options.infinitySpin}
+              onChange={() => handleCheckboxChange("infinitySpin")}
+              style={{ transform: 'scale(1.2)' }}
+            />
+            Infinite spins
+          </label>
+
+          {!options.infinitySpin && (
+            <div style={{ marginLeft: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label style={{ color: '#fff', fontSize: '1rem' }}>Number of spins:</label>
+              <input
+                type="number"
+                value={spinLimit}
+                min="1"
+                max="10000"
+                step="1"
+                placeholder="e.g: 10"
+                onChange={(e) => setSpinLimit(e.target.value)}
+                style={{
+                  width: '120px',
+                  background: '#34363c',
+                  border: '1px solid #444',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: '#fff',
+                  fontSize: '1rem'
+                }}
+              />
+              <span style={{ color: '#a0a0a0', fontSize: '0.9rem' }}>
+                (1-10,000)
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="admin-controls">
+        <div className="admin-buttons">
+          <button 
+            className="control-button"
+            onClick={() => {
+              if (segments.length < 2) {
+                setErrorMessage("At least 2 segments are required for preview.");
+                return;
+              }
+              const segmentObjects = segments.map((segment) => ({
+                label: segment.name
+              }));
+
+              setWheel({
+                Elements: assignColors(segmentObjects, colorPalette),
+              });
+              setIsModalOpen(true);
+              setIsWheelVisible(true);
+            }}
+          >
+            Preview Wheel
+          </button>
+          
+          <button 
+            className="control-button" 
+            onClick={handleCreateWheel}
+            style={{ 
+              background: 'linear-gradient(135deg, #00b894, #00a085)',
+              boxShadow: '0 4px 15px rgba(0, 184, 148, 0.3)'
+            }}
+          >
+            {wheelId ? "Save Changes" : "Create Wheel"}
+          </button>
+        </div>
       </div>
     </div>
   );

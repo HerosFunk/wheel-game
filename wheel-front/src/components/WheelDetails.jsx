@@ -312,7 +312,7 @@ const WheelDetails = () => {
 
 			await loadRecentResults();
 		} catch (error) {
-			setErrorMessage("Erreur lors du chargement de la roue");
+			setErrorMessage("Error loading wheel");
 		} finally {
 			setIsLoading(false);
 		}
@@ -575,7 +575,7 @@ const WheelDetails = () => {
 			}
 		} catch (error) {
 			console.error("Error during spin:", error);
-			setErrorMessage("Erreur lors de la rotation de la roue");
+			setErrorMessage("Error during spin");
 			setMustSpin(false);
 		}
 	};
@@ -599,7 +599,7 @@ const WheelDetails = () => {
 			await updateElementStatus(elementId);
 			fetchWheel();
 		} catch (error) {
-			setErrorMessage("Erreur lors de la mise à jour de l'élément");
+			setErrorMessage("Error updating element");
 		}
 	};
 
@@ -610,7 +610,7 @@ const WheelDetails = () => {
 			setLastResult(null);
 			fetchWheel();
 		} catch (error) {
-			setErrorMessage("Erreur lors de la réinitialisation");
+			setErrorMessage("Error during reset");
 		}
 	};
 
@@ -619,7 +619,7 @@ const WheelDetails = () => {
 			await setAllElementsActive(wheelId);
 			fetchWheel();
 		} catch (error) {
-			setErrorMessage("Erreur lors de l'activation des éléments");
+			setErrorMessage("Error activating elements");
 		}
 	};
 
@@ -643,7 +643,7 @@ const WheelDetails = () => {
 	}
 
 	if (!wheel || !wheel.elements || wheel.elements.length === 0) {
-		return <div className="error-message">Roue non trouvée ou aucun élément</div>;
+		return <div className="error-message">Wheel not found or no elements</div>;
 	}
 
 	const canSpin = spinsLeft !== "0" && !mustSpin && wheel.elements.some((el) => el.isActif);
