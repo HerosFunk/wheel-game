@@ -8,10 +8,8 @@ const socketIO = require('./socket/socket');
 
 const app = express();
 
-// Connexion à la base de données
 connectDB();
 
-// Middleware
 app.use(cors({
     origin: process.env.FRONTEND_URL || '*',
     credentials: true
@@ -20,11 +18,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-// Routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/wheels', require('./routes/wheel.routes'));
 
-// Gestion des erreurs 404
 app.use((req, res, next) => {
     res.status(404).json({
         status: 'error',
@@ -32,19 +28,15 @@ app.use((req, res, next) => {
     });
 });
 
-// Gestionnaire d'erreurs global
 app.use(errorHandler);
 
-// Démarrage du serveur
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
     console.log(`Serveur démarré sur le port ${PORT}`);
 });
 
-// Initialisation des sockets
 socketIO.init(server);
 
-// Gestion des erreurs non capturées
 process.on('uncaughtException', err => {
     console.error('UNCAUGHT EXCEPTION! 💥 Arrêt du serveur...');
     console.error(err.name, err.message);

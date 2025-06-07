@@ -40,15 +40,12 @@ const removeViewer = (wheelId, socketId) => {
 };
 
 const handleConnection = (socket) => {
-	console.log("Nouvelle connexion socket:", socket.id);
-
 	socket.on("error", (error) => {
 		console.error("Erreur socket:", error);
 		socket.emit("error", { message: "Une erreur est survenue" });
 	});
 
 	socket.on("disconnect", () => {
-		console.log("Déconnexion socket:", socket.id);
 
 		for (const [wheelId, viewers] of wheelViewers.entries()) {
 			if (viewers.has(socket.id)) {
@@ -64,14 +61,11 @@ const handleConnection = (socket) => {
 					count: newCount,
 					timestamp: Date.now(),
 				});
-
-				console.log(`Viewer ${socket.id} removed from wheel ${wheelId}. New count: ${newCount}`);
 			}
 		}
 	});
 
 	socket.on("wheel:join", (wheelId) => {
-		console.log(`Socket ${socket.id} joining wheel room: ${wheelId}`);
 
 		socket.join(`wheel:${wheelId}`);
 		addViewer(wheelId, socket.id);
@@ -95,11 +89,9 @@ const handleConnection = (socket) => {
 
 		socket.emit("wheel:joined", { wheelId });
 
-		console.log(`Wheel ${wheelId} now has ${viewerCount} viewers`);
 	});
 
 	socket.on("wheel:leave", (wheelId) => {
-		console.log(`Socket ${socket.id} leaving wheel room: ${wheelId}`);
 
 		socket.leave(`wheel:${wheelId}`);
 		removeViewer(wheelId, socket.id);
@@ -118,11 +110,9 @@ const handleConnection = (socket) => {
 
 		socket.emit("wheel:left", { wheelId });
 
-		console.log(`Wheel ${wheelId} now has ${newCount} viewers`);
 	});
 
 	socket.on("wheel:spin:start", (data) => {
-		console.log(`Spin started by ${socket.id} for wheel ${data.wheelId}`);
 		socket.to(`wheel:${data.wheelId}`).emit("wheel:spin:starting", {
 			initiatedBy: socket.id,
 			wheelId: data.wheelId,
@@ -153,7 +143,6 @@ const init = (httpServer) => {
 
 	io.on("connection", handleConnection);
 
-	console.log("Socket.IO initialisé avec succès!");
 	return io;
 };
 

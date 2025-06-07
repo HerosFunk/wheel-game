@@ -7,7 +7,6 @@ const api = axios.create({
     }
 });
 
-// Intercepteur pour ajouter le token à chaque requête
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -21,7 +20,6 @@ api.interceptors.request.use(
     }
 );
 
-// Intercepteur pour gérer les erreurs
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -33,11 +31,9 @@ api.interceptors.response.use(
     }
 );
 
-// Authentification
 export const login = (password) => api.post('/auth/login', { password });
 export const logout = () => api.post('/auth/logout');
 
-// Roues
 export const getWheels = async (params = {}) => {
     try {
         const response = await api.get('/wheels', { 
@@ -69,21 +65,17 @@ export const updateWheel = (id, wheelData) => api.put(`/wheels/${id}`, wheelData
 export const deleteWheel = (id) => api.delete(`/wheels/${id}`);
 export const spinWheel = (id) => api.post(`/wheels/spin/${id}`);
 
-// Éléments
 export const toggleElementActive = (wheelId, elementId) => 
     api.put(`/wheels/${wheelId}/elements/${elementId}/toggle`);
 
-// Alias pour la compatibilité
 export const updateElementStatus = toggleElementActive;
 
 export const setAllElementsActive = (wheelId) => 
     api.put(`/wheels/${wheelId}/elements/set-all-active`);
 
-// Résultats
 export const resetResults = (wheelId) => 
     api.put(`/wheels/${wheelId}/results/reset`);
 
-// Favoris
 export const toggleFavorite = (id) => api.put(`/wheels/${id}/favorite`);
 export const getFavoriteWheels = () => api.get('/wheels/favorites');
 

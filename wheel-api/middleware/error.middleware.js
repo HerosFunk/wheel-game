@@ -21,14 +21,12 @@ const errorHandler = (err, req, res, next) => {
             stack: err.stack
         });
     } else {
-        // En production, on ne renvoie pas les détails de l'erreur
         if (err.isOperational) {
             res.status(err.statusCode).json({
                 status: err.status,
                 message: err.message
             });
         } else {
-            // Erreur de programmation : on ne renvoie pas les détails
             console.error('ERROR 💥', err);
             res.status(500).json({
                 status: 'error',

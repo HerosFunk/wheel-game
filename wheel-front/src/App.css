@@ -1,4 +1,4 @@
-/* App.css - Styles globaux cohérents avec le design moderne */
+@import './responsive-fixes.css';
 
 .App {
   text-align: center;
@@ -24,20 +24,6 @@
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
-}
-
-.App-header {
-  background: linear-gradient(135deg, #23252b 0%, #2e3038 50%, #34363c 100%);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  padding: 0px 20px;
-  position: relative;
-  overflow: hidden;
 }
 
 .App-header::before {

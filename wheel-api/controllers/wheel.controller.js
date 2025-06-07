@@ -166,16 +166,6 @@ exports.spinWheel = async (req, res) => {
 
 		const elements = await Element.find({ wheel: id });
 
-		console.log(
-			"🔧 All elements from DB:",
-			elements.map((el) => ({
-				id: el._id,
-				label: el.label,
-				isActif: el.isActif,
-				weight: el.weight,
-			}))
-		);
-
 		if (elements.length === 0) {
 			return res.status(400).send({ error: "No elements in wheel" });
 		}
@@ -186,26 +176,10 @@ exports.spinWheel = async (req, res) => {
 
 		const activeElements = elements.filter((element) => element.isActif);
 
-		console.log(
-			"🔧 Active elements for spin:",
-			activeElements.map((el) => ({
-				id: el._id,
-				label: el.label,
-				weight: el.weight,
-			}))
-		);
-
 		const weightedElements = activeElements.flatMap((element) => Array(element.weight).fill(element));
 
 		const randomIndex = Math.floor(Math.random() * weightedElements.length);
 		const selectedElement = weightedElements[randomIndex];
-
-		console.log("🔧 Selected element:", {
-			id: selectedElement._id,
-			label: selectedElement.label,
-			weight: selectedElement.weight,
-			isActif: selectedElement.isActif,
-		});
 
 		const sessionId = req.headers["x-session-id"] || req.sessionID || null;
 
@@ -258,7 +232,6 @@ exports.spinWheel = async (req, res) => {
 
 		try {
 			io.getIO().to(`wheel:${id}`).emit("spin", response);
-			console.log(`📡 Emitted spin event to room wheel:${id}`);
 		} catch (socketError) {
 			console.error("Socket emission error:", socketError);
 		}

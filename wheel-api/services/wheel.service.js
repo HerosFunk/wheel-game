@@ -3,7 +3,6 @@ const Element = require('../models/element.model');
 const { AppError } = require('../middleware/error.middleware');
 
 class WheelService {
-    // Récupérer toutes les roues avec leurs éléments
     async getAllWheels(options = {}) {
         const { sortBy = 'createdAt', sortOrder = 'desc', favoriteOnly = false } = options;
         
@@ -22,7 +21,6 @@ class WheelService {
         return wheels;
     }
 
-    // Récupérer une roue par son ID avec ses éléments
     async getWheelById(id) {
         try {
             const wheel = await Wheel.findById(id).populate('elements');
@@ -35,7 +33,6 @@ class WheelService {
         }
     }
 
-    // Créer une nouvelle roue
     async createWheel(wheelData) {
         try {
             const wheel = new Wheel(wheelData);
@@ -45,7 +42,6 @@ class WheelService {
         }
     }
 
-    // Mettre à jour une roue
     async updateWheel(id, wheelData) {
         try {
             const wheel = await Wheel.findByIdAndUpdate(
@@ -62,7 +58,6 @@ class WheelService {
         }
     }
 
-    // Supprimer une roue et ses éléments associés
     async deleteWheel(id) {
         try {
             const wheel = await Wheel.findById(id);
@@ -70,10 +65,8 @@ class WheelService {
                 throw new Error('Roue non trouvée');
             }
 
-            // Supprimer tous les éléments associés
             await Element.deleteMany({ wheel: id });
             
-            // Supprimer la roue
             await wheel.deleteOne();
             
             return { message: 'Roue et éléments associés supprimés avec succès' };
@@ -82,7 +75,6 @@ class WheelService {
         }
     }
 
-    // Mettre à jour le nombre de spins restants
     async updateSpinsLeft(id, spinsLeft) {
         try {
             const wheel = await Wheel.findByIdAndUpdate(
@@ -102,7 +94,6 @@ class WheelService {
         }
     }
 
-    // Mettre à jour l'élément sélectionné
     async updateSelectedElement(id, selectedElement) {
         try {
             const wheel = await Wheel.findByIdAndUpdate(
