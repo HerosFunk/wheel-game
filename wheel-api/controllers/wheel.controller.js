@@ -107,7 +107,6 @@ exports.getWheels = async (req, res) => {
 };
 
 exports.getWheel = async (req, res) => {
-
 	const { id } = req.params;
 
 	if (!id) {
@@ -167,12 +166,15 @@ exports.spinWheel = async (req, res) => {
 
 		const elements = await Element.find({ wheel: id });
 
-		console.log('🔧 All elements from DB:', elements.map(el => ({ 
-			id: el._id, 
-			label: el.label, 
-			isActif: el.isActif,
-			weight: el.weight 
-		})));
+		console.log(
+			"🔧 All elements from DB:",
+			elements.map((el) => ({
+				id: el._id,
+				label: el.label,
+				isActif: el.isActif,
+				weight: el.weight,
+			}))
+		);
 
 		if (elements.length === 0) {
 			return res.status(400).send({ error: "No elements in wheel" });
@@ -184,22 +186,25 @@ exports.spinWheel = async (req, res) => {
 
 		const activeElements = elements.filter((element) => element.isActif);
 
-		console.log('🔧 Active elements for spin:', activeElements.map(el => ({ 
-			id: el._id, 
-			label: el.label, 
-			weight: el.weight 
-		})));
+		console.log(
+			"🔧 Active elements for spin:",
+			activeElements.map((el) => ({
+				id: el._id,
+				label: el.label,
+				weight: el.weight,
+			}))
+		);
 
 		const weightedElements = activeElements.flatMap((element) => Array(element.weight).fill(element));
 
 		const randomIndex = Math.floor(Math.random() * weightedElements.length);
 		const selectedElement = weightedElements[randomIndex];
 
-		console.log('🔧 Selected element:', {
+		console.log("🔧 Selected element:", {
 			id: selectedElement._id,
 			label: selectedElement.label,
 			weight: selectedElement.weight,
-			isActif: selectedElement.isActif
+			isActif: selectedElement.isActif,
 		});
 
 		const sessionId = req.headers["x-session-id"] || req.sessionID || null;
@@ -237,15 +242,26 @@ exports.spinWheel = async (req, res) => {
 			dernierResultat: previousResult ? previousResult.selectedElement : null,
 			spinNumber: result.spinNumber,
 			totalSpins: result.spinNumber,
+			wheelId: id,
+			numberOfSpins: wheel.numberOfSpinsLeft,
 			resultDetails: {
 				id: result._id,
 				label: selectedElement.label,
 				weight: selectedElement.weight,
 				timestamp: result.createdAt,
 			},
+			wheelInfo: {
+				removeAfterSelection: wheel.removeAfterSelection,
+				totalElements: activeElements.length,
+			},
 		};
 
-		io.getIO().emit("spin", response);
+		try {
+			io.getIO().to(`wheel:${id}`).emit("spin", response);
+			console.log(`📡 Emitted spin event to room wheel:${id}`);
+		} catch (socketError) {
+			console.error("Socket emission error:", socketError);
+		}
 
 		return res.send(response);
 	} catch (error) {
@@ -338,110 +354,103 @@ exports.cloneWheel = async (req, res) => {
 	}
 };
 
-
 exports.updateWheel = async (req, res) => {
-  const { id } = req.params;
-  const { name, removeAfterSelection, numberOfSpins, elements } = req.body;
+	const { id } = req.params;
+	const { name, removeAfterSelection, numberOfSpins, elements } = req.body;
 
+	if (!name || numberOfSpins === undefined || !elements || elements.length === 0) {
+		return res.status(400).json({
+			status: "fail",
+			message: "Missing required fields: name, numberOfSpins, elements",
+		});
+	}
 
-  if (!name || numberOfSpins === undefined || !elements || elements.length === 0) {
-    return res.status(400).json({ 
-      status: "fail",
-      message: "Missing required fields: name, numberOfSpins, elements" 
-    });
-  }
+	try {
+		const wheel = await Wheel.findById(id);
+		if (!wheel) {
+			return res.status(404).json({
+				status: "fail",
+				message: "Wheel not found",
+			});
+		}
 
-  try {
-    const wheel = await Wheel.findById(id);
-    if (!wheel) {
-      return res.status(404).json({ 
-        status: "fail",
-        message: "Wheel not found" 
-      });
-    }
+		wheel.name = name;
+		wheel.removeAfterSelection = removeAfterSelection;
+		wheel.numberOfSpins = numberOfSpins;
+		wheel.numberOfSpinsLeft = numberOfSpins;
+		await wheel.save();
 
-    wheel.name = name;
-    wheel.removeAfterSelection = removeAfterSelection;
-    wheel.numberOfSpins = numberOfSpins;
-    wheel.numberOfSpinsLeft = numberOfSpins;
-    await wheel.save();
+		const existingElements = await Element.find({ wheel: id });
+		const existingElementIds = existingElements.map((el) => el._id.toString());
 
+		const processedElementIds = [];
 
-    const existingElements = await Element.find({ wheel: id });
-    const existingElementIds = existingElements.map(el => el._id.toString());  
+		for (let i = 0; i < elements.length; i++) {
+			const elementData = elements[i];
 
-    const processedElementIds = [];
-    
-    for (let i = 0; i < elements.length; i++) {
-      const elementData = elements[i];
+			if (!elementData.label || elementData.label.trim() === "") {
+				return res.status(400).json({
+					status: "fail",
+					message: `Element ${i + 1} must have a label`,
+				});
+			}
 
-      if (!elementData.label || elementData.label.trim() === '') {
-        return res.status(400).json({ 
-          status: "fail",
-          message: `Element ${i + 1} must have a label` 
-        });
-      }
+			if (elementData._id && existingElementIds.includes(elementData._id)) {
+				const updatedElement = await Element.findByIdAndUpdate(
+					elementData._id,
+					{
+						label: elementData.label.trim(),
+						weight: elementData.weight || 1,
+						isActif: elementData.isActif !== undefined ? elementData.isActif : true,
+						updatedAt: Date.now(),
+					},
+					{ new: true, runValidators: true }
+				);
 
-      if (elementData._id && existingElementIds.includes(elementData._id)) {
-        
-        const updatedElement = await Element.findByIdAndUpdate(
-          elementData._id, 
-          {
-            label: elementData.label.trim(),
-            weight: elementData.weight || 1,
-            isActif: elementData.isActif !== undefined ? elementData.isActif : true,
-            updatedAt: Date.now()
-          },
-          { new: true, runValidators: true }
-        );
-        
-        if (updatedElement) {
-          processedElementIds.push(elementData._id);
-        }
-      } else {
-        
-        const newElement = await Element.create({
-          label: elementData.label.trim(),
-          wheel: id,
-          weight: elementData.weight || 1,
-          isActif: elementData.isActif !== undefined ? elementData.isActif : true,
-        });
-        
-        processedElementIds.push(newElement._id.toString());
-      }
-    }
+				if (updatedElement) {
+					processedElementIds.push(elementData._id);
+				}
+			} else {
+				const newElement = await Element.create({
+					label: elementData.label.trim(),
+					wheel: id,
+					weight: elementData.weight || 1,
+					isActif: elementData.isActif !== undefined ? elementData.isActif : true,
+				});
 
-    const elementsToDelete = existingElementIds.filter(elementId => 
-      !processedElementIds.includes(elementId)
-    );
-    
-    if (elementsToDelete.length > 0) {
-      await Element.deleteMany({ _id: { $in: elementsToDelete } });
-    }
+				processedElementIds.push(newElement._id.toString());
+			}
+		}
 
-    const updatedWheel = await Wheel.findById(id).populate({
-      path: 'elements',
-      model: 'Element'
-    });
-    
-    try {
-      socketIO.emitToRoom(`wheel:${id}`, 'wheel:updated', { wheel: updatedWheel });
-    } catch (socketError) {
-      console.error("Socket error (non-blocking):", socketError);
-    }
-    
-    return res.status(200).json({
-      status: "success",
-      data: updatedWheel
-    });
-  } catch (error) {
-    console.error("Error updating wheel:", error);
-    return res.status(500).json({ 
-      status: "error",
-      message: "Error updating wheel",
-      details: error.message 
-    });
-  }
+		const elementsToDelete = existingElementIds.filter((elementId) => !processedElementIds.includes(elementId));
+
+		if (elementsToDelete.length > 0) {
+			await Element.deleteMany({ _id: { $in: elementsToDelete } });
+		}
+
+		const updatedWheel = await Wheel.findById(id).populate({
+			path: "elements",
+			model: "Element",
+		});
+
+		try {
+			socketIO.emitToRoom(`wheel:${id}`, "wheel:updated", { wheel: updatedWheel });
+		} catch (socketError) {
+			console.error("Socket error (non-blocking):", socketError);
+		}
+
+		return res.status(200).json({
+			status: "success",
+			data: updatedWheel,
+		});
+	} catch (error) {
+		console.error("Error updating wheel:", error);
+		return res.status(500).json({
+			status: "error",
+			message: "Error updating wheel",
+			details: error.message,
+		});
+	}
 };
 
 exports.toggleElementActive = async (req, res) => {

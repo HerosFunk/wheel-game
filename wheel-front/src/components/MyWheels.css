@@ -228,7 +228,6 @@
 
 .favorite-button:hover {
   color: #ffd700;
-  transform: scale(1.15);
   background: none !important;
   box-shadow: none !important;
 }
@@ -249,10 +248,6 @@
 .favorite-button.active {
   color: #ffd700;
   background: none !important;
-}
-
-.favorite-button.active:hover {
-  transform: scale(1.15);
 }
 
 .wheel-card-content {

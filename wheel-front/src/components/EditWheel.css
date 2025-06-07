@@ -84,7 +84,9 @@
   font-size: 0.9rem;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  transition: none !important;
 }
+
 
 .wheel-name-input:focus {
   outline: none;

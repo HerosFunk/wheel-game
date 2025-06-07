@@ -40,16 +40,8 @@ const CustomWheel = ({
 	const calculateAngles = useCallback(() => {
 		if (elements.length === 0) return [];
 
-		// Calculer le poids total
 		const totalWeight = elements.reduce((sum, element) => sum + (element.weight || 1), 0);
 
-		console.log("📏 Total weight:", totalWeight);
-		console.log(
-			"📏 Elements weights:",
-			elements.map((el) => ({ label: el.label, weight: el.weight || 1 }))
-		);
-
-		// Calculer les angles cumulatifs
 		let currentAngle = 0;
 		const angles = [];
 
@@ -64,30 +56,12 @@ const CustomWheel = ({
 				weight: weight,
 			});
 
-			console.log(
-				`📏 Element ${index} (${element.label}): ${currentAngle.toFixed(2)}° -> ${(currentAngle + angleSize).toFixed(
-					2
-				)}° (size: ${angleSize.toFixed(2)}°)`
-			);
 
 			currentAngle += angleSize;
 		});
 
 		return angles;
 	}, [elements]);
-
-	const getElementInfo = useCallback(
-		(index) => {
-			const angles = calculateAngles();
-			if (index < 0 || index >= angles.length) return null;
-
-			return {
-				...elements[index],
-				...angles[index],
-			};
-		},
-		[elements, calculateAngles]
-	);
 
 	const hexToRgb = useCallback((hex) => {
 		if (!hex) return null;
@@ -106,8 +80,6 @@ const CustomWheel = ({
 
 	const adjustTextToSection = useCallback((ctx, text, maxWidth, maxHeight) => {
 		const words = text.split(" ");
-		const lines = [];
-		let currentLine = "";
 		let fontSize = 18;
 
 		ctx.font = `bold ${fontSize}px Arial`;
@@ -155,54 +127,46 @@ const CustomWheel = ({
 		};
 	}, []);
 
-    const getElementIndexAtAngle = useCallback(
+	const getElementIndexAtAngle = useCallback(
 		(angle) => {
 			const angles = calculateAngles();
 
-			// Normaliser l'angle
 			const normalizedAngle = ((angle % 360) + 360) % 360;
 
-			// Trouver dans quelle section se trouve cet angle
 			for (let i = 0; i < angles.length; i++) {
 				const angleInfo = angles[i];
 
 				if (angleInfo.startAngle <= angleInfo.endAngle) {
-					// Section normale
 					if (normalizedAngle >= angleInfo.startAngle && normalizedAngle < angleInfo.endAngle) {
 						return i;
 					}
 				} else {
-					// Section qui traverse 0°
 					if (normalizedAngle >= angleInfo.startAngle || normalizedAngle < angleInfo.endAngle) {
 						return i;
 					}
 				}
 			}
 
-			return 0; // Fallback
+			return 0;
 		},
 		[calculateAngles]
 	);
 
-	const getSelectedElement = useCallback((rotation) => {
-    const normalizedRotation = ((rotation % 360) + 360) % 360;
-    
-    // L'angle où la flèche pointe (270° = haut)
-    const arrowAngle = 270;
-    
-    // Angle relatif de la flèche par rapport à la roue tournée
-    let relativeAngle = (arrowAngle - normalizedRotation) % 360;
-    if (relativeAngle < 0) relativeAngle += 360;
-    
-    const selectedIndex = getElementIndexAtAngle(relativeAngle);
-    
-    console.log('🔍 getSelectedElement - Rotation:', rotation.toFixed(2));
-    console.log('🔍 getSelectedElement - Relative angle:', relativeAngle.toFixed(2));
-    console.log('🔍 getSelectedElement - Selected index:', selectedIndex);
-    console.log('🔍 getSelectedElement - Selected element:', elements[selectedIndex]?.label);
-    
-    return elements[selectedIndex];
-}, [elements, getElementIndexAtAngle]);
+	const getSelectedElement = useCallback(
+		(rotation) => {
+			const normalizedRotation = ((rotation % 360) + 360) % 360;
+
+			const arrowAngle = 270;
+
+			let relativeAngle = (arrowAngle - normalizedRotation) % 360;
+			if (relativeAngle < 0) relativeAngle += 360;
+
+			const selectedIndex = getElementIndexAtAngle(relativeAngle);
+
+			return elements[selectedIndex];
+		},
+		[elements, getElementIndexAtAngle]
+	);
 
 	const getHoveredElement = useCallback(
 		(mouseX, mouseY, centerX, centerY, radius, rotation) => {
@@ -212,31 +176,15 @@ const CustomWheel = ({
 
 			if (distance > radius || distance < 20) return null;
 
-			// Calculer l'angle de la souris par rapport au centre
 			let mouseAngle = Math.atan2(dy, dx) * (180 / Math.PI);
 			mouseAngle = (mouseAngle + 360) % 360;
 
-			// UTILISER LA MÊME LOGIQUE QUE getSelectedElement
-			// Simuler comme si une flèche était à la position de la souris
-			// et trouver quel élément elle pointerait
-
-			// L'angle "flèche" est maintenant l'angle de la souris
 			const virtualArrowAngle = mouseAngle;
 
-			// Angle relatif par rapport à la roue tournée
 			let relativeAngle = (virtualArrowAngle - rotation) % 360;
 			if (relativeAngle < 0) relativeAngle += 360;
 
 			const hoveredIndex = getElementIndexAtAngle(relativeAngle);
-
-			console.log(
-				"🖱️ Mouse angle:",
-				mouseAngle.toFixed(2),
-				"Relative:",
-				relativeAngle.toFixed(2),
-				"Hovered element:",
-				elements[hoveredIndex]?.label
-			);
 
 			return hoveredIndex;
 		},
@@ -331,20 +279,16 @@ const CustomWheel = ({
 				ctx.shadowColor = "transparent";
 				ctx.shadowBlur = 0;
 
-				// Calculer la position du texte au centre de la section
 				const centerAngle = (startAngle + endAngle) / 2;
 				const textRadius = radius * 0.65;
 				const textX = centerX + Math.cos(centerAngle) * textRadius;
 				const textY = centerY + Math.sin(centerAngle) * textRadius;
 
-				// Adapter la taille du texte à la taille de la section
 				const sectionAngleRadians = Math.abs(endAngle - startAngle);
 				const maxTextWidth = Math.min(radius * 0.6, Math.abs(2 * Math.sin(sectionAngleRadians / 2) * textRadius * 0.8));
 
-				// Plus la section est grande, plus le texte peut être grand
-				const baseFontSize = 18;
-				const weightMultiplier = Math.sqrt(element.weight || 1); // Racine carrée pour éviter que ce soit trop gros
-				const adjustedMaxHeight = radius * 0.3 * Math.min(weightMultiplier, 2); // Limiter à 2x la taille normale
+				const weightMultiplier = Math.sqrt(element.weight || 1);
+				const adjustedMaxHeight = radius * 0.3 * Math.min(weightMultiplier, 2);
 
 				const textInfo = adjustTextToSection(ctx, element.label, maxTextWidth, adjustedMaxHeight);
 
@@ -354,7 +298,6 @@ const CustomWheel = ({
 				ctx.textAlign = "center";
 				ctx.textBaseline = "middle";
 
-				// Fond du texte
 				ctx.save();
 				ctx.globalAlpha = 0.85;
 				ctx.fillStyle = "#fff";
@@ -379,7 +322,6 @@ const CustomWheel = ({
 				);
 				ctx.restore();
 
-				// Texte
 				ctx.fillStyle = "#000";
 				ctx.font = `bold ${textInfo.fontSize}px Arial`;
 
@@ -389,7 +331,6 @@ const CustomWheel = ({
 					ctx.fillText(line, 0, lineY);
 				});
 
-				// Afficher le weight si > 1
 				if ((element.weight || 1) > 1) {
 					ctx.fillStyle = "#ff0000";
 					ctx.font = `bold ${Math.max(12, textInfo.fontSize * 0.7)}px Arial`;
@@ -492,71 +433,41 @@ const CustomWheel = ({
 		(targetElementId) => {
 			if (!targetElementId || elements.length === 0) return null;
 
-			// Trouver l'index de l'élément ciblé
 			const targetIndex = elements.findIndex((el) => el._id === targetElementId || el.id === targetElementId);
 			if (targetIndex === -1) {
-				console.error("❌ Element not found with ID:", targetElementId);
 				return null;
 			}
-
-			console.log("🎯 Target element:", elements[targetIndex].label, "at index:", targetIndex);
-			console.log("🎯 Current rotation:", currentRotation.toFixed(2));
 
 			const angles = calculateAngles();
 			const targetAngleInfo = angles[targetIndex];
 
 			if (!targetAngleInfo) {
-				console.error("❌ No angle info for target index:", targetIndex);
 				return null;
 			}
 
-			console.log(
-				"🎯 Target section:",
-				targetAngleInfo.startAngle.toFixed(2),
-				"->",
-				targetAngleInfo.endAngle.toFixed(2)
-			);
-
-			// Générer un angle aléatoire dans cette section
 			const margin = targetAngleInfo.angleSize * 0.15;
 			const effectiveStart = targetAngleInfo.startAngle + margin;
 			const effectiveEnd = targetAngleInfo.endAngle - margin;
 			const randomAngleInSection = effectiveStart + Math.random() * (effectiveEnd - effectiveStart);
 
-			console.log("🎲 Random angle in section:", randomAngleInSection.toFixed(2));
-
-			// CORRECTION: Calculer la rotation absolue nécessaire
-			// On veut que la flèche (270°) pointe sur randomAngleInSection
 			let targetAbsoluteRotation = 270 - randomAngleInSection;
 
-			// Normaliser entre 0 et 360
 			while (targetAbsoluteRotation < 0) {
 				targetAbsoluteRotation += 360;
 			}
 			targetAbsoluteRotation = targetAbsoluteRotation % 360;
 
-			// Ajouter assez de tours complets pour faire une belle animation
-			const minSpins = spinSpeed; // Tours minimum
+			const minSpins = spinSpeed;
 			const currentNormalized = currentRotation % 360;
 
-			// Calculer combien de degrés on doit tourner depuis la position actuelle
 			let rotationNeeded = targetAbsoluteRotation - currentNormalized;
 			if (rotationNeeded < 0) {
 				rotationNeeded += 360;
 			}
 
-			// Ajouter les tours complets
 			const totalRotationNeeded = 360 * minSpins + rotationNeeded;
 			const finalAbsoluteRotation = currentRotation + totalRotationNeeded;
 
-			console.log("🎯 Current normalized:", currentNormalized.toFixed(2));
-			console.log("🎯 Target absolute rotation:", targetAbsoluteRotation.toFixed(2));
-			console.log("🎯 Rotation needed:", rotationNeeded.toFixed(2));
-			console.log("🎯 Total rotation needed:", totalRotationNeeded.toFixed(2));
-			console.log("🎯 Final absolute rotation:", finalAbsoluteRotation.toFixed(2));
-
-			// Vérification
-			const finalNormalized = finalAbsoluteRotation % 360;
 			const getIndexForRotation = (rotation) => {
 				const normalizedRotation = ((rotation % 360) + 360) % 360;
 				let relativeAngle = (270 - normalizedRotation) % 360;
@@ -572,33 +483,16 @@ const CustomWheel = ({
 			};
 
 			const verificationIndex = getIndexForRotation(finalAbsoluteRotation);
-			console.log("🔍 Final normalized:", finalNormalized.toFixed(2));
-			console.log(
-				"🔍 Verification - Will select index:",
-				verificationIndex,
-				"element:",
-				elements[verificationIndex]?.label
-			);
 
 			if (verificationIndex !== targetIndex) {
-				console.error("❌ Verification failed! Expected index:", targetIndex, "Got index:", verificationIndex);
-
-				// Debug supplémentaire
-				const debugRelativeAngle = (270 - finalNormalized) % 360;
-				console.log("🐛 Debug - Arrow points to angle:", debugRelativeAngle.toFixed(2));
-				angles.forEach((angleInfo, idx) => {
-					console.log(`🐛 Section ${idx}: ${angleInfo.startAngle.toFixed(2)}-${angleInfo.endAngle.toFixed(2)}`);
-				});
-
 				return null;
-			} else {
-				console.log("✅ Verification passed!");
 			}
 
 			return finalAbsoluteRotation;
 		},
 		[elements, calculateAngles, currentRotation, spinSpeed]
 	);
+
 	const startSpin = useCallback(
 		(targetId = null) => {
 			if (disabled || isInternalAnimating || elements.length === 0 || spinStartedRef.current) {
@@ -619,31 +513,20 @@ const CustomWheel = ({
 			let totalRotation;
 
 			if (targetId) {
-				console.log("🎯 Starting targeted spin for element ID:", targetId);
 
-				// calculateRotationForElement retourne déjà une rotation absolue
 				const targetRotation = calculateRotationForElement(targetId);
 				if (targetRotation !== null) {
-					// CORRECTION: Ne pas ajouter currentRotation car calculateRotationForElement
-					// calcule déjà depuis la position actuelle
 					totalRotation = targetRotation;
-					console.log("🎯 Using calculated rotation:", totalRotation);
 				} else {
-					console.log("❌ Fallback to random rotation");
-					// Fallback: rotation aléatoire si l'élément n'est pas trouvé
 					const baseRotation = 360 * spinSpeed;
 					const randomExtra = Math.random() * 360;
 					totalRotation = currentRotation + baseRotation + randomExtra;
 				}
 			} else {
-				console.log("🎯 Starting random spin");
-				// Rotation aléatoire normale
 				const baseRotation = 360 * spinSpeed;
 				const randomExtra = Math.random() * 360;
 				totalRotation = currentRotation + baseRotation + randomExtra;
 			}
-
-			console.log("🎯 Final total rotation for animation:", totalRotation);
 			animationRef.current = requestAnimationFrame(() => animate(Date.now(), totalRotation));
 		},
 		[
@@ -660,12 +543,8 @@ const CustomWheel = ({
 	);
 
 	useEffect(() => {
-		// Attendre que targetElementId soit défini avant de démarrer la rotation
 		if (isSpinning && lastSpinComplete && !isInternalAnimating && elements.length > 0 && targetElementId) {
-			console.log("🎯 CustomWheel: Starting spin with target ID:", targetElementId);
 			startSpin(targetElementId);
-		} else if (isSpinning && targetElementId === null) {
-			console.log("⏳ CustomWheel: Waiting for target element ID...");
 		}
 	}, [isSpinning, lastSpinComplete, isInternalAnimating, elements.length, startSpin, targetElementId]);
 

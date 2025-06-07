@@ -13,6 +13,66 @@ import io from "socket.io-client";
 const notify = () => toast("Link copied!");
 const API_URL = "https://wheel-game.azurewebsites.net";
 
+const ViewerCounter = ({ count }) => {
+	const [isUpdating, setIsUpdating] = useState(false);
+	const [previousCount, setPreviousCount] = useState(count);
+
+	useEffect(() => {
+		if (count !== previousCount) {
+			setIsUpdating(true);
+			setPreviousCount(count);
+
+			const timer = setTimeout(() => {
+				setIsUpdating(false);
+			}, 400);
+
+			return () => clearTimeout(timer);
+		}
+	}, [count, previousCount]);
+
+	return (
+		<div
+			className={`viewer-counter ${isUpdating ? "updated" : ""}`}
+			title={`${count} viewer${count > 1 ? "s" : ""} connected`}
+		>
+			<span
+				style={{
+					fontSize: "1rem",
+					color: count > 1 ? "#00b894" : "#74b9ff",
+					transition: "color 0.3s ease",
+				}}
+			>
+				👥
+			</span>
+			<span
+				style={{
+					color: count > 1 ? "#00b894" : "#fff",
+					fontWeight: count > 1 ? "600" : "500",
+					transition: "all 0.3s ease",
+					minWidth: "20px",
+					textAlign: "center",
+				}}
+			>
+				{count}
+			</span>
+			{count > 1 && (
+				<span
+					style={{
+						fontSize: "0.7rem",
+						color: "#00b894",
+						textTransform: "uppercase",
+						letterSpacing: "0.5px",
+						animation: "pulse 2s ease-in-out infinite",
+						fontWeight: "600",
+					}}
+				>
+					LIVE
+				</span>
+			)}
+		</div>
+	);
+};
+
 const colorPalette = [
 	"#ff69b4",
 	"#e74c3c",
@@ -85,13 +145,13 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 		if (!text || text.length <= maxCharsPerLine) {
 			return text;
 		}
-		
-		const words = text.split(' ');
+
+		const words = text.split(" ");
 		const lines = [];
-		let currentLine = '';
-		
+		let currentLine = "";
+
 		for (let word of words) {
-			const testLine = currentLine + (currentLine ? ' ' : '') + word;
+			const testLine = currentLine + (currentLine ? " " : "") + word;
 			if (testLine.length <= maxCharsPerLine) {
 				currentLine = testLine;
 			} else {
@@ -100,22 +160,21 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 					currentLine = word;
 				} else {
 					if (word.length > maxCharsPerLine) {
-						lines.push(word.substring(0, maxCharsPerLine - 3) + '...');
-						currentLine = '';
+						lines.push(word.substring(0, maxCharsPerLine - 3) + "...");
+						currentLine = "";
 					} else {
 						currentLine = word;
 					}
 				}
 			}
 		}
-		
+
 		if (currentLine) {
 			lines.push(currentLine);
 		}
-		
-		return lines.join('\n');
-	}, []);
 
+		return lines.join("\n");
+	}, []);
 
 	useEffect(() => {
 		if (!isVisible || !element || !mousePosition || !tooltipRef.current) {
@@ -126,43 +185,43 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 		const tooltipRect = tooltip.getBoundingClientRect();
 		const viewportWidth = window.innerWidth;
 		const viewportHeight = window.innerHeight;
-		
+
 		let newStyle = {
-			position: 'fixed',
+			position: "fixed",
 			zIndex: 1000,
 			opacity: 1,
-			transform: 'translateY(0) scale(1)',
-			transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+			transform: "translateY(0) scale(1)",
+			transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
 		};
 
 		const spaceRight = viewportWidth - mousePosition.x;
 		const spaceLeft = mousePosition.x;
-		
+
 		if (spaceRight >= tooltipRect.width + 20) {
 			newStyle.left = mousePosition.x + 15;
-			newStyle.transformOrigin = 'left center';
+			newStyle.transformOrigin = "left center";
 		} else if (spaceLeft >= tooltipRect.width + 20) {
 			newStyle.right = viewportWidth - mousePosition.x + 15;
-			newStyle.transformOrigin = 'right center';
+			newStyle.transformOrigin = "right center";
 		} else {
-			newStyle.left = '50%';
-			newStyle.transform = 'translateX(-50%) translateY(0) scale(1)';
-			newStyle.transformOrigin = 'center center';
+			newStyle.left = "50%";
+			newStyle.transform = "translateX(-50%) translateY(0) scale(1)";
+			newStyle.transformOrigin = "center center";
 		}
 
 		const spaceBelow = viewportHeight - mousePosition.y;
 		const spaceAbove = mousePosition.y;
-		
+
 		if (spaceBelow >= tooltipRect.height + 20) {
 			newStyle.top = mousePosition.y + 15;
 		} else if (spaceAbove >= tooltipRect.height + 20) {
 			newStyle.bottom = viewportHeight - mousePosition.y + 15;
 		} else {
-			newStyle.top = '50%';
+			newStyle.top = "50%";
 			if (newStyle.transform) {
-				newStyle.transform = 'translateX(-50%) translateY(-50%) scale(1)';
+				newStyle.transform = "translateX(-50%) translateY(-50%) scale(1)";
 			} else {
-				newStyle.transform = 'translateY(-50%) scale(1)';
+				newStyle.transform = "translateY(-50%) scale(1)";
 			}
 		}
 
@@ -174,51 +233,48 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 	}
 
 	const formattedTitle = formatMultilineText(element.label, 30);
-	const probability = element.weight && elements ? 
-		((element.weight / elements.reduce((sum, el) => sum + (el.weight || 1), 0)) * 100).toFixed(1) : 
-		'N/A';
+	const probability =
+		element.weight && elements
+			? ((element.weight / elements.reduce((sum, el) => sum + (el.weight || 1), 0)) * 100).toFixed(1)
+			: "N/A";
 
 	return (
-		<div 
-			ref={tooltipRef}
-			className="wheel-tooltip visible animate-in"
-			style={tooltipStyle}
-		>
+		<div ref={tooltipRef} className="wheel-tooltip visible animate-in" style={tooltipStyle}>
 			<div className="wheel-tooltip-color">
-				<div 
-					className="wheel-tooltip-color-dot active"
-					style={{ backgroundColor: element.color || '#ccc' }}
-				></div>
+				<div className="wheel-tooltip-color-dot active" style={{ backgroundColor: element.color || "#ccc" }}></div>
 			</div>
-			
-			<div 
+
+			<div
 				className="wheel-tooltip-title"
 				style={{
-					whiteSpace: 'pre-line',
-					wordBreak: 'break-word'
+					whiteSpace: "pre-line",
+					wordBreak: "break-word",
 				}}
 			>
 				{formattedTitle}
 			</div>
-			
+
 			<div className="wheel-tooltip-content">
 				<div className="wheel-tooltip-stat">
 					<span className="wheel-tooltip-label">Weight:</span>
 					<span className="wheel-tooltip-value">{element.weight || 1}</span>
 				</div>
-				
+
 				<div className="wheel-tooltip-stat">
 					<span className="wheel-tooltip-label">Probability:</span>
 					<span className="wheel-tooltip-value">{probability}%</span>
 				</div>
-				
+
 				{element.isActif !== undefined && (
 					<div className="wheel-tooltip-stat">
 						<span className="wheel-tooltip-label">Status:</span>
-						<span className="wheel-tooltip-value" style={{ 
-							color: element.isActif ? '#00b894' : '#e17055' 
-						}}>
-							{element.isActif ? 'Active' : 'Inactive'}
+						<span
+							className="wheel-tooltip-value"
+							style={{
+								color: element.isActif ? "#00b894" : "#e17055",
+							}}
+						>
+							{element.isActif ? "Active" : "Inactive"}
 						</span>
 					</div>
 				)}
@@ -244,9 +300,34 @@ const WheelDetails = () => {
 	const [hoveredElement, setHoveredElement] = useState(null);
 	const [showResultsModal, setShowResultsModal] = useState(false);
 	const [recentResults, setRecentResults] = useState([]);
-	const [targetElementId, setTargetElementId] = useState(null);	
+	const [targetElementId, setTargetElementId] = useState(null);
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 	const [showTooltip, setShowTooltip] = useState(false);
+	const [connectedViewers, setConnectedViewers] = useState(1);
+	const [isInitiatingSpinLocally, setIsInitiatingSpinLocally] = useState(false);
+
+	useEffect(() => {
+		if (socket) {
+			socket.on("viewer:joined", (data) => {
+				setConnectedViewers((prev) => prev + 1);
+			});
+
+			socket.on("viewer:left", (data) => {
+				setConnectedViewers((prev) => Math.max(1, prev - 1));
+			});
+
+			socket.on("viewers:count", (data) => {
+				setConnectedViewers(data.count);
+			});
+
+			return () => {
+				socket.off("viewer:joined");
+				socket.off("viewer:left");
+				socket.off("viewers:count");
+				socket.off("wheel:spin:starting");
+			};
+		}
+	}, [socket]);
 
 	const loadRecentResults = async () => {
 		try {
@@ -306,32 +387,34 @@ const WheelDetails = () => {
 		}
 	};
 
-	const handleElementHover = useCallback((element) => {
-		if (!element) {
-			setHoveredElement(null);
-			setShowTooltip(false);
-			return;
-		}
+	const handleElementHover = useCallback(
+		(element) => {
+			if (!element) {
+				setHoveredElement(null);
+				setShowTooltip(false);
+				return;
+			}
 
-		const isLastSelectedElement = selectedElement && 
-			element._id === selectedElement._id;
+			const isLastSelectedElement = selectedElement && element._id === selectedElement._id;
 
-		if (wheel && wheel.removeAfterSelection && isLastSelectedElement) {
-			setHoveredElement({
-				...element,
-				label: `${element.label} (Will be removed)`,
-				isActif: false
-			});
-		} else {
-			setHoveredElement(element);
-		}
-		setShowTooltip(!!element);
-	}, [wheel, selectedElement]);
+			if (wheel && wheel.removeAfterSelection && isLastSelectedElement) {
+				setHoveredElement({
+					...element,
+					label: `${element.label} (Will be removed)`,
+					isActif: false,
+				});
+			} else {
+				setHoveredElement(element);
+			}
+			setShowTooltip(!!element);
+		},
+		[wheel, selectedElement]
+	);
 
 	const handleMouseMove = useCallback((event) => {
 		setMousePosition({
 			x: event.clientX,
-			y: event.clientY
+			y: event.clientY,
 		});
 	}, []);
 
@@ -355,320 +438,271 @@ const WheelDetails = () => {
 		fetchWheel();
 	}, [wheelId]);
 
-	useEffect(() => {
-		if (socket) {
-			socket.on("spin", (data) => {
-				if (true) {
-					if (!wheel || !wheel.elements) {
-						return;
-					}
-					const idElementSelected = data.result;
-					const lastElementSelected = data.dernierResultat || null;
-
-					const indexElementSelected = wheel.elements.findIndex(
-						(element) => (element._id || element.id)?.toString() === idElementSelected.toString()
-					);
-
-					if (lastElementSelected != null) {
-						const indexLastElementSelected = wheel.elements.find(
-							(element) => (element._id || element.id)?.toString() === lastElementSelected.toString()
-						);
-
-						if (indexLastElementSelected) {
-							const idPrize = indexLastElementSelected._id || indexLastElementSelected.id;
-							const indexPrize = wheel.elements.findIndex((element) => (element._id || element.id) === idPrize);
-
-							const prizeElement = wheel.elements[indexPrize];
-
-							if (wheel.removeAfterSelection) {
-								const updatedElements = wheel.elements.filter((element) => (element._id || element.id) !== idPrize);
-
-								setWheel({
-									...wheel,
-									elements: updatedElements.filter((element) => element.isActif === true),
-								});
-							}
-						}
-					}
-
-					setMustSpin(true);
-
-					if (data.numberOfSpins === -1) {
-						setSpinsLeft("Unlimited");
-					} else {
-						setSpinsLeft(spinsLeft - 1);
-					}
-
-					if (data.result) {
-						setSelectedElement(data.result);
-						if (data.dernierResultat) {
-							setLastResult(data.dernierResultat);
-						}
-					}
-				}
-			});
-
-			socket.on("wheel:updated", (data) => {
-				setWheel(data);
-			});
-
-			socket.on("element:statusUpdated", (data) => {
-				if (wheel) {
-					setWheel((prevWheel) => ({
-						...prevWheel,
-						elements: prevWheel.elements.map((element) =>
-							(element._id || element.id) === (data.element._id || data.element.id) ? data.element : element
-						),
-					}));
-				}
-			});
-
-			return () => {
-				socket.off("spin");
-				socket.off("wheel:updated");
-				socket.off("element:statusUpdated");
-			};
-		}
-	}, [isSocketReady, spinsLeft, userRole, wheel, socket]);
-
-	const playSpinSound = () => {
+	const playSpinSound = useCallback(() => {
 		try {
 			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 			const masterGain = audioContext.createGain();
 			masterGain.connect(audioContext.destination);
 			masterGain.gain.setValueAtTime(0.4, audioContext.currentTime);
-			
+
 			const currentTime = audioContext.currentTime;
 			const duration = 4;
-			
+
 			const createWhooshSound = () => {
 				const oscillator = audioContext.createOscillator();
 				const gain = audioContext.createGain();
 				const filter = audioContext.createBiquadFilter();
-				
-				oscillator.type = 'sawtooth';
+
+				oscillator.type = "sawtooth";
 				oscillator.frequency.setValueAtTime(80, currentTime);
 				oscillator.frequency.exponentialRampToValueAtTime(300, currentTime + 0.5);
 				oscillator.frequency.exponentialRampToValueAtTime(120, currentTime + duration);
-				
-				filter.type = 'lowpass';
+
+				filter.type = "lowpass";
 				filter.frequency.setValueAtTime(800, currentTime);
 				filter.frequency.exponentialRampToValueAtTime(2000, currentTime + 1);
 				filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
-				
+
 				gain.gain.setValueAtTime(0.6, currentTime);
 				gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
-				
+
 				oscillator.connect(filter);
 				filter.connect(gain);
 				gain.connect(masterGain);
-				
+
 				oscillator.start(currentTime);
 				oscillator.stop(currentTime + duration);
 			};
-			
+
 			const createTickingSound = () => {
 				const tickCount = 20;
 				for (let i = 0; i < tickCount; i++) {
-					const tickTime = currentTime + (i * duration / tickCount);
+					const tickTime = currentTime + (i * duration) / tickCount;
 					const oscillator = audioContext.createOscillator();
 					const gain = audioContext.createGain();
-					
-					oscillator.type = 'square';
-					oscillator.frequency.setValueAtTime(800 + (i * 20), tickTime);
-					
+
+					oscillator.type = "square";
+					oscillator.frequency.setValueAtTime(800 + i * 20, tickTime);
+
 					gain.gain.setValueAtTime(0, tickTime);
 					gain.gain.linearRampToValueAtTime(0.3, tickTime + 0.01);
 					gain.gain.exponentialRampToValueAtTime(0.01, tickTime + 0.05);
-					
+
 					oscillator.connect(gain);
 					gain.connect(masterGain);
-					
+
 					oscillator.start(tickTime);
 					oscillator.stop(tickTime + 0.05);
 				}
 			};
-			
+
 			const createDramaticRise = () => {
 				const oscillator = audioContext.createOscillator();
 				const gain = audioContext.createGain();
 				const filter = audioContext.createBiquadFilter();
-				
-				oscillator.type = 'triangle';
+
+				oscillator.type = "triangle";
 				oscillator.frequency.setValueAtTime(150, currentTime + 2);
 				oscillator.frequency.exponentialRampToValueAtTime(600, currentTime + duration);
-				
-				filter.type = 'highpass';
+
+				filter.type = "highpass";
 				filter.frequency.setValueAtTime(100, currentTime + 2);
 				filter.frequency.exponentialRampToValueAtTime(400, currentTime + duration);
-				
+
 				gain.gain.setValueAtTime(0, currentTime + 2);
 				gain.gain.linearRampToValueAtTime(0.4, currentTime + 2.5);
 				gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
-				
+
 				oscillator.connect(filter);
 				filter.connect(gain);
 				gain.connect(masterGain);
-				
+
 				oscillator.start(currentTime + 2);
 				oscillator.stop(currentTime + duration);
 			};
-			
+
 			const createEndDing = () => {
 				setTimeout(() => {
 					const oscillator = audioContext.createOscillator();
 					const gain = audioContext.createGain();
-					
-					oscillator.type = 'sine';
+
+					oscillator.type = "sine";
 					oscillator.frequency.setValueAtTime(800, currentTime + duration - 0.3);
 					oscillator.frequency.exponentialRampToValueAtTime(1200, currentTime + duration - 0.1);
-					
+
 					gain.gain.setValueAtTime(0.5, currentTime + duration - 0.3);
 					gain.gain.exponentialRampToValueAtTime(0.01, currentTime + duration + 0.5);
-					
+
 					oscillator.connect(gain);
 					gain.connect(masterGain);
-					
+
 					oscillator.start(currentTime + duration - 0.3);
 					oscillator.stop(currentTime + duration + 0.5);
 				}, 3700);
 			};
-			
+
 			createWhooshSound();
 			createTickingSound();
 			createDramaticRise();
 			createEndDing();
-			
 		} catch (error) {
 			console.log("Audio not supported or blocked:", error);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		if (socket) {
+			socket.on("spin", (data) => {
+				if (!wheel || !wheel.elements) {
+					return;
+				}
+
+				if (!isInitiatingSpinLocally) {
+					playSpinSound();
+				}
+
+				if (data.result) {
+					const targetElement = wheel.elements.find((el) => el._id === data.result);
+					if (targetElement) {
+						const newSelectedElement = {
+							_id: data.result,
+							label: targetElement.label,
+							weight: targetElement.weight,
+							color: targetElement.color,
+						};
+						setSelectedElement(newSelectedElement);
+					}
+
+					setTargetElementId(data.result);
+
+					if (!mustSpin) {
+						setMustSpin(true);
+					}
+				}
+
+				if (data.numberOfSpins !== undefined) {
+					if (data.numberOfSpins === -1) {
+						setSpinsLeft("Unlimited");
+					} else {
+						setSpinsLeft(data.numberOfSpins.toString());
+					}
+				}
+
+				const lastElementSelected = data.dernierResultat || null;
+
+				if (lastElementSelected != null && wheel.removeAfterSelection) {
+					const elementToRemove = wheel.elements.find(
+						(element) => (element._id || element.id)?.toString() === lastElementSelected.toString()
+					);
+
+					if (elementToRemove) {
+						const updatedElements = wheel.elements.filter(
+							(element) => (element._id || element.id) !== elementToRemove._id
+						);
+
+						setWheel({
+							...wheel,
+							elements: updatedElements.filter((element) => element.isActif === true),
+						});
+					}
+				}
+			});
+
+			socket.emit("wheel:join", wheelId);
+
+			return () => {
+				socket.off("spin");
+				socket.off("wheel:updated");
+				socket.off("element:statusUpdated");
+				socket.emit("wheel:leave", wheelId);
+			};
+		}
+	}, [socket, wheel, wheelId, mustSpin, playSpinSound]);
 
 	const handleSpin = async () => {
-    if (mustSpin || !wheel || spinsLeft === "0") {
-        return;
-    }
+		if (mustSpin || !wheel || spinsLeft === "0") {
+			return;
+		}
 
-    try {
-        setShowConfetti(false);
-        
-        if (wheel.removeAfterSelection && selectedElement) {
-            const updatedElements = wheel.elements.filter(
-                (element) => element._id !== selectedElement._id
-            );
-            setWheel({
-                ...wheel,
-                elements: updatedElements.filter((element) => element.isActif === true),
-            });
-        }
-        
-        setSelectedElement(null);
-        setTargetElementId(null);
-        playSpinSound();
+		try {
+			setIsInitiatingSpinLocally(true);
 
-        console.log('🚀 Calling spinWheel API...');
-        const response = await spinWheel(wheelId);
-        console.log('📡 Received response:', response.data);
+			if (socket) {
+				socket.emit("wheel:spin:start", { wheelId });
+			}
+			setShowConfetti(false);
 
-        if (response.data) {
-            // IMPORTANT: Définir l'élément ciblé AVANT de démarrer la rotation
-            if (response.data.result) {
-                console.log('🎯 Setting target element ID:', response.data.result);
-                console.log('🎯 Target element details:', response.data.resultDetails);
-                setTargetElementId(response.data.result);
-            }
+			if (wheel.removeAfterSelection && selectedElement) {
+				const updatedElements = wheel.elements.filter((element) => element._id !== selectedElement._id);
+				setWheel({
+					...wheel,
+					elements: updatedElements.filter((element) => element.isActif === true),
+				});
+			}
 
-            // Maintenant seulement démarrer la rotation
-            console.log('🎯 Starting wheel spin...');
-            setMustSpin(true);
+			setSelectedElement(null);
+			setTargetElementId(null);
+			playSpinSound();
 
-            if (wheel.numberOfSpins !== -1) {
-                const currentSpins = parseInt(spinsLeft);
-                if (!isNaN(currentSpins)) {
-                    setSpinsLeft(Math.max(0, currentSpins - 1).toString());
-                } else {
-                    setSpinsLeft(wheel.numberOfSpins.toString());
-                }
-            } else {
-                setSpinsLeft("Unlimited");
-            }
+			const response = await spinWheel(wheelId);
 
-            if (response.data.resultDetails) {
-                const newSelectedElement = {
-                    _id: response.data.result,
-                    label: response.data.resultDetails.label,
-                    weight: response.data.resultDetails.weight,
-                    color: wheel.elements.find(el => el._id === response.data.result)?.color
-                };
-                setSelectedElement(newSelectedElement);
-            }
+			if (response.data) {
+				if (response.data.result) {
+					setTargetElementId(response.data.result);
+				}
 
-            if (response.data.dernierResultat) {
-                setLastResult(response.data.dernierResultat);
-            }
+				setMustSpin(true);
 
-            await loadRecentResults();
-        }
-    } catch (error) {
-        console.error("Error during spin:", error);
-        setErrorMessage("Error during spin");
-        setMustSpin(false);
-        setTargetElementId(null);
-    }
-};
+				if (wheel.numberOfSpins !== -1) {
+					const currentSpins = parseInt(spinsLeft);
+					if (!isNaN(currentSpins)) {
+						setSpinsLeft(Math.max(0, currentSpins - 1).toString());
+					} else {
+						setSpinsLeft(wheel.numberOfSpins.toString());
+					}
+				} else {
+					setSpinsLeft("Unlimited");
+				}
+
+				if (response.data.resultDetails) {
+					const newSelectedElement = {
+						_id: response.data.result,
+						label: response.data.resultDetails.label,
+						weight: response.data.resultDetails.weight,
+						color: wheel.elements.find((el) => el._id === response.data.result)?.color,
+					};
+					setSelectedElement(newSelectedElement);
+				}
+
+				if (response.data.dernierResultat) {
+					setLastResult(response.data.dernierResultat);
+				}
+
+				await loadRecentResults();
+			}
+		} catch (error) {
+			console.error("Error during spin:", error);
+			setErrorMessage("Error during spin");
+			setMustSpin(false);
+			setTargetElementId(null);
+		}
+	};
 
 	const handleSpinEnd = (element) => {
-    if (!element) return;
-    
-    console.log('🏁 Spin ended - Selected element:', element.label);
-    console.log('🏁 Expected element ID:', targetElementId);
-    console.log('🏁 Actual element ID:', element._id);
-    
-    if (element._id === targetElementId) {
-        console.log('✅ SPIN RESULT CORRECT!');
-    } else {
-        console.log('❌ SPIN RESULT INCORRECT!');
-    }
-    
-    setMustSpin(false);
-    setShowConfetti(true);
+		if (!element) return;
 
-    setTimeout(() => {
-        setShowConfetti(false);
-    }, 3000);
-};
+		setIsInitiatingSpinLocally(false);
+
+		setMustSpin(false);
+		setShowConfetti(true);
+
+		setTimeout(() => {
+			setShowConfetti(false);
+		}, 3000);
+	};
 
 	const handleSpinStart = () => {
 		setShowConfetti(false);
-	};
-
-	const handleToggleElement = async (elementId) => {
-		try {
-			await updateElementStatus(elementId);
-			fetchWheel();
-		} catch (error) {
-			setErrorMessage("Error updating element");
-		}
-	};
-
-	const handleReset = async () => {
-		try {
-			await resetResults(wheelId);
-			setSelectedElement(null);
-			setLastResult(null);
-			fetchWheel();
-		} catch (error) {
-			setErrorMessage("Error during reset");
-		}
-	};
-
-	const handleActivateAll = async () => {
-		try {
-			await setAllElementsActive(wheelId);
-			fetchWheel();
-		} catch (error) {
-			setErrorMessage("Error activating elements");
-		}
 	};
 
 	const copyToClipboard = () => {
@@ -685,15 +719,10 @@ const WheelDetails = () => {
 	}, [wheel]);
 
 	const activeElements = useMemo(() => {
-    const filtered = wheel ? wheel.elements.filter(element => element.isActif) : [];
-    console.log('🔄 Active elements order:', filtered.map((el, index) => ({ 
-        index, 
-        id: el._id, 
-        label: el.label,
-        isActif: el.isActif 
-    })));
-    return filtered;
-}, [wheel]);
+		const filtered = wheel ? wheel.elements.filter((element) => element.isActif) : [];
+
+		return filtered;
+	}, [wheel]);
 
 	useEffect(() => {
 		if (wheel) {
@@ -728,6 +757,8 @@ const WheelDetails = () => {
 				</Link>
 			</div>
 
+			<ViewerCounter count={connectedViewers} />
+
 			<div className="wheel-header">
 				<h1 className="wheel-title">{wheel.name.toUpperCase()}</h1>
 			</div>
@@ -759,10 +790,7 @@ const WheelDetails = () => {
 			</div>
 
 			<div className="wheel-section-layout">
-				<div 
-					className="wheel-container"
-					onMouseLeave={handleMouseLeave}
-				>
+				<div className="wheel-container" onMouseLeave={handleMouseLeave}>
 					<CustomWheel
 						elements={activeElements}
 						onSpinEnd={handleSpinEnd}
@@ -864,7 +892,7 @@ const WheelDetails = () => {
 						.map((element, index) => {
 							const isSelected = selectedElement && element._id === selectedElement._id;
 							const willBeRemoved = wheel.removeAfterSelection && isSelected;
-							
+
 							return (
 								<div
 									key={element._id || element.id}
