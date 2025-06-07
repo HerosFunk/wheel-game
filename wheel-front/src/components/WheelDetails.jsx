@@ -331,7 +331,7 @@ const WheelDetails = () => {
 
 	const loadRecentResults = async () => {
 		try {
-			const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results/recent?limit=5`, {
+			const response = await fetch(`https://wheel-game.azurewebsites.net/api/wheels/${wheelId}/results/recent?limit=5`, {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem("token")}`,
 				},
@@ -424,7 +424,7 @@ const WheelDetails = () => {
 	}, []);
 
 	useEffect(() => {
-		const newSocket = io(process.env.REACT_APP_API_URL || "http://localhost:3000");
+		const newSocket = io(process.env.REACT_APP_API_URL || "https://wheel-game.azurewebsites.net");
 		setSocket(newSocket);
 
 		return () => {

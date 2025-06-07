@@ -5,7 +5,7 @@ import CustomWheel from "./CustomWheel";
 import { Pencil } from "lucide-react";
 import "./CreateWheel.css";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://wheel-game.azurewebsites.net/api";
 
 const CreateWheel = () => {
 	const { wheelId } = useParams();

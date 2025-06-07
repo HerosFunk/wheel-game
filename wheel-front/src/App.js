@@ -4,7 +4,7 @@ import AppRoutes from "./Routes";
 import "./App.css";
 import { socket } from './socket';
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://wheel-game.azurewebsites.net/api";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {

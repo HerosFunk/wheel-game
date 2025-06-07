@@ -15,7 +15,7 @@ const Home = () => {
 	useEffect(() => {
 		const fetchWheels = async () => {
 			try {
-				const response = await fetch("http://localhost:3000/wheels", {
+				const response = await fetch("https://wheel-game.azurewebsites.net/wheels", {
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("token")}`,
 					},

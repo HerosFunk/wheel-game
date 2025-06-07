@@ -20,7 +20,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
   const loadRecentResults = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results/recent?limit=20`, {
+      const response = await fetch(`https://wheel-game.azurewebsites.net/api/wheels/${wheelId}/results/recent?limit=20`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -42,7 +42,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
   const loadStats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results?format=stats`, {
+      const response = await fetch(`https://wheel-game.azurewebsites.net/api/wheels/${wheelId}/results?format=stats`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -64,7 +64,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
   const loadHistory = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/wheels/${wheelId}/results?page=${pageNum}&limit=20`, {
+      const response = await fetch(`https://wheel-game.azurewebsites.net/api/wheels/${wheelId}/results?page=${pageNum}&limit=20`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

@@ -4,7 +4,7 @@ import money_emoji from "../img/money_emoji.png";
 import CustomWheel from "./CustomWheel";
 import { Pencil } from "lucide-react";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://wheel-game.azurewebsites.net/api";
 
 const EditWheel = () => {
 	const { wheelId } = useParams();
