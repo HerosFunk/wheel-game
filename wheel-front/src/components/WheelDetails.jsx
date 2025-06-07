@@ -574,6 +574,7 @@ const WheelDetails = () => {
             // IMPORTANT: Définir l'élément ciblé AVANT de démarrer la rotation
             if (response.data.result) {
                 console.log('🎯 Setting target element ID:', response.data.result);
+                console.log('🎯 Target element details:', response.data.resultDetails);
                 setTargetElementId(response.data.result);
             }
 
@@ -617,15 +618,25 @@ const WheelDetails = () => {
 };
 
 	const handleSpinEnd = (element) => {
-		if (!element) return;
-		
-		setMustSpin(false);
-		setShowConfetti(true);
+    if (!element) return;
+    
+    console.log('🏁 Spin ended - Selected element:', element.label);
+    console.log('🏁 Expected element ID:', targetElementId);
+    console.log('🏁 Actual element ID:', element._id);
+    
+    if (element._id === targetElementId) {
+        console.log('✅ SPIN RESULT CORRECT!');
+    } else {
+        console.log('❌ SPIN RESULT INCORRECT!');
+    }
+    
+    setMustSpin(false);
+    setShowConfetti(true);
 
-		setTimeout(() => {
-			setShowConfetti(false);
-		}, 3000);
-	};
+    setTimeout(() => {
+        setShowConfetti(false);
+    }, 3000);
+};
 
 	const handleSpinStart = () => {
 		setShowConfetti(false);

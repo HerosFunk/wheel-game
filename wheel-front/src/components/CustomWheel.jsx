@@ -38,10 +38,46 @@ const CustomWheel = ({
 	const spinStartedRef = useRef(false);
 
 	const calculateAngles = useCallback(() => {
-		const totalElements = elements.length;
-		const anglePerElement = 360 / totalElements;
-		return elements.map((_, index) => index * anglePerElement);
-	}, [elements.length]);
+    if (elements.length === 0) return [];
+    
+    // Calculer le poids total
+    const totalWeight = elements.reduce((sum, element) => sum + (element.weight || 1), 0);
+    
+    console.log('📏 Total weight:', totalWeight);
+    console.log('📏 Elements weights:', elements.map(el => ({ label: el.label, weight: el.weight || 1 })));
+    
+    // Calculer les angles cumulatifs
+    let currentAngle = 0;
+    const angles = [];
+    
+    elements.forEach((element, index) => {
+        const weight = element.weight || 1;
+        const angleSize = (weight / totalWeight) * 360;
+        
+        angles.push({
+            startAngle: currentAngle,
+            endAngle: currentAngle + angleSize,
+            angleSize: angleSize,
+            weight: weight
+        });
+        
+        console.log(`📏 Element ${index} (${element.label}): ${currentAngle.toFixed(2)}° -> ${(currentAngle + angleSize).toFixed(2)}° (size: ${angleSize.toFixed(2)}°)`);
+        
+        currentAngle += angleSize;
+    });
+    
+    return angles;
+}, [elements]);
+
+const getElementInfo = useCallback((index) => {
+    const angles = calculateAngles();
+    if (index < 0 || index >= angles.length) return null;
+    
+    return {
+        ...elements[index],
+        ...angles[index]
+    };
+}, [elements, calculateAngles]);
 
 	const hexToRgb = useCallback((hex) => {
 		if (!hex) return null;
@@ -111,12 +147,29 @@ const CustomWheel = ({
 
 	const getSelectedElement = useCallback((rotation) => {
     const normalizedRotation = ((rotation % 360) + 360) % 360;
-    const anglePerElement = 360 / elements.length;
+    const angles = calculateAngles();
     
-    let relativeAngle = (270 - normalizedRotation) % 360;
+    // L'angle où la flèche pointe (270° = haut)
+    const arrowAngle = 270;
+    
+    // Angle relatif de la flèche par rapport à la roue tournée
+    let relativeAngle = (arrowAngle - normalizedRotation) % 360;
     if (relativeAngle < 0) relativeAngle += 360;
     
-    const selectedIndex = Math.floor(relativeAngle / anglePerElement) % elements.length;
+    // Trouver dans quelle section se trouve cet angle
+    let selectedIndex = -1;
+    for (let i = 0; i < angles.length; i++) {
+        const angleInfo = angles[i];
+        if (relativeAngle >= angleInfo.startAngle && relativeAngle < angleInfo.endAngle) {
+            selectedIndex = i;
+            break;
+        }
+    }
+    
+    // Fallback pour les cas limites (360°/0°)
+    if (selectedIndex === -1) {
+        selectedIndex = 0;
+    }
     
     console.log('🔍 getSelectedElement - Rotation:', rotation.toFixed(2));
     console.log('🔍 getSelectedElement - Normalized:', normalizedRotation.toFixed(2));
@@ -125,29 +178,36 @@ const CustomWheel = ({
     console.log('🔍 getSelectedElement - Selected element:', elements[selectedIndex]?.label);
     
     return elements[selectedIndex];
-}, [elements]);
+}, [elements, calculateAngles]);
 
 	const getHoveredElement = useCallback(
-		(mouseX, mouseY, centerX, centerY, radius, rotation) => {
-			const dx = mouseX - centerX;
-			const dy = mouseY - centerY;
-			const distance = Math.sqrt(dx * dx + dy * dy);
+    (mouseX, mouseY, centerX, centerY, radius, rotation) => {
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-			if (distance > radius || distance < 20) return null;
+        if (distance > radius || distance < 20) return null;
 
-			let mouseAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-			mouseAngle = (mouseAngle + 360) % 360;
+        let mouseAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+        mouseAngle = (mouseAngle + 360) % 360;
 
-			let adjustedAngle = (360 - mouseAngle) % 360;
-			let relativeAngle = (rotation - adjustedAngle + 360) % 360;
+        // Convertir l'angle de la souris en angle relatif à la roue
+        let relativeAngle = (mouseAngle - rotation + 360) % 360;
+        
+        const angles = calculateAngles();
+        
+        // Trouver dans quelle section se trouve l'angle de la souris
+        for (let i = 0; i < angles.length; i++) {
+            const angleInfo = angles[i];
+            if (relativeAngle >= angleInfo.startAngle && relativeAngle < angleInfo.endAngle) {
+                return i;
+            }
+        }
 
-			const anglePerElement = 360 / elements.length;
-			const elementIndex = Math.floor(relativeAngle / anglePerElement);
-
-			return Math.max(0, Math.min(elements.length - 1, elementIndex));
-		},
-		[elements.length]
-	);
+        return 0; // Fallback
+    },
+    [calculateAngles]
+);
 
 	const handleMouseMove = useCallback(
 		(event) => {
@@ -199,149 +259,130 @@ const CustomWheel = ({
 		}
 	}, [isSpinning, isInternalAnimating, lastSpinComplete, onElementHover]);
 
-	const formatTooltipText = useCallback((text, maxCharsPerLine = 25) => {
-		if (!text || text.length <= maxCharsPerLine) {
-			return [text];
-		}
-
-		const words = text.split(" ");
-		const lines = [];
-		let currentLine = "";
-
-		for (let word of words) {
-			const testLine = currentLine + (currentLine ? " " : "") + word;
-			if (testLine.length <= maxCharsPerLine) {
-				currentLine = testLine;
-			} else {
-				if (currentLine) {
-					lines.push(currentLine);
-					currentLine = word;
-				} else {
-					if (word.length > maxCharsPerLine) {
-						lines.push(word.substring(0, maxCharsPerLine - 3) + "...");
-						currentLine = "";
-					} else {
-						currentLine = word;
-					}
-				}
-			}
-		}
-
-		if (currentLine) {
-			lines.push(currentLine);
-		}
-
-		return lines;
-	}, []);
-
 	const drawWheelOnly = useCallback(
-		(ctx, rotation) => {
-			const centerX = wheelSize / 2;
-			const centerY = wheelSize / 2 + pointerSize + 10;
-			const radius = (wheelSize - borderWidth * 2) / 2;
-			const angles = calculateAngles();
+    (ctx, rotation) => {
+        const centerX = wheelSize / 2;
+        const centerY = wheelSize / 2 + pointerSize + 10;
+        const radius = (wheelSize - borderWidth * 2) / 2;
+        const angles = calculateAngles();
 
-			ctx.clearRect(0, 0, wheelSize, wheelSize + pointerSize + 20);
+        ctx.clearRect(0, 0, wheelSize, wheelSize + pointerSize + 20);
 
-			elements.forEach((element, index) => {
-				ctx.save();
+        elements.forEach((element, index) => {
+            if (index >= angles.length) return;
+            
+            ctx.save();
 
-				const baseAngle = angles[index];
-				const nextBaseAngle = angles[index + 1] || 360;
-				const sectionAngle = nextBaseAngle - baseAngle;
+            const angleInfo = angles[index];
+            const startAngle = ((angleInfo.startAngle + rotation) * Math.PI) / 180;
+            const endAngle = ((angleInfo.endAngle + rotation) * Math.PI) / 180;
 
-				const startAngle = ((baseAngle + rotation) * Math.PI) / 180;
-				const endAngle = ((nextBaseAngle + rotation) * Math.PI) / 180;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
 
-				ctx.beginPath();
-				ctx.moveTo(centerX, centerY);
-				ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-				ctx.closePath();
+            let color = customColors[index] || `hsl(${(index * 360) / elements.length}, 70%, 60%)`;
 
-				let color = customColors[index] || `hsl(${(index * 360) / elements.length}, 70%, 60%)`;
+            if (hoveredElementIndex === index && !isSpinning && !isInternalAnimating && lastSpinComplete) {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                const rgb = hexToRgb(color) || { r: 255, g: 105, b: 180 };
+                color = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
+            }
 
-				if (hoveredElementIndex === index && !isSpinning && !isInternalAnimating && lastSpinComplete) {
-					ctx.shadowColor = color;
-					ctx.shadowBlur = 15;
-					const rgb = hexToRgb(color) || { r: 255, g: 105, b: 180 };
-					color = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
-				}
+            ctx.fillStyle = color;
+            ctx.fill();
 
-				ctx.fillStyle = color;
-				ctx.fill();
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
 
-				ctx.shadowColor = "transparent";
-				ctx.shadowBlur = 0;
+            // Calculer la position du texte au centre de la section
+            const centerAngle = (startAngle + endAngle) / 2;
+            const textRadius = radius * 0.65;
+            const textX = centerX + Math.cos(centerAngle) * textRadius;
+            const textY = centerY + Math.sin(centerAngle) * textRadius;
 
-				const textAngle = (startAngle + endAngle) / 2;
-				const textRadius = radius * 0.65;
-				const textX = centerX + Math.cos(textAngle) * textRadius;
-				const textY = centerY + Math.sin(textAngle) * textRadius;
+            // Adapter la taille du texte à la taille de la section
+            const sectionAngleRadians = Math.abs(endAngle - startAngle);
+            const maxTextWidth = Math.min(
+                radius * 0.6,
+                Math.abs(2 * Math.sin(sectionAngleRadians / 2) * textRadius * 0.8)
+            );
+            
+            // Plus la section est grande, plus le texte peut être grand
+            const baseFontSize = 18;
+            const weightMultiplier = Math.sqrt(element.weight || 1); // Racine carrée pour éviter que ce soit trop gros
+            const adjustedMaxHeight = radius * 0.3 * Math.min(weightMultiplier, 2); // Limiter à 2x la taille normale
+            
+            const textInfo = adjustTextToSection(ctx, element.label, maxTextWidth, adjustedMaxHeight);
 
-				const sectionRadians = (sectionAngle * Math.PI) / 180;
-				const maxTextWidth = Math.min(radius * 0.6, Math.abs(2 * Math.sin(sectionRadians / 2) * textRadius * 0.8));
-				const maxTextHeight = radius * 0.3;
+            ctx.save();
+            ctx.translate(textX, textY);
+            ctx.rotate(centerAngle + Math.PI / 2);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
 
-				const textInfo = adjustTextToSection(ctx, element.label, maxTextWidth, maxTextHeight);
+            // Fond du texte
+            ctx.save();
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = "#fff";
+            const lineHeight = textInfo.fontSize + 2;
+            const totalHeight = textInfo.lines.length * lineHeight;
+            const backgroundPadding = 6;
 
-				ctx.save();
-				ctx.translate(textX, textY);
-				ctx.rotate(textAngle + Math.PI / 2);
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
+            ctx.font = `bold ${textInfo.fontSize}px Arial`;
+            let maxLineWidth = 0;
+            textInfo.lines.forEach((line) => {
+                const lineWidth = ctx.measureText(line).width;
+                if (lineWidth > maxLineWidth) {
+                    maxLineWidth = lineWidth;
+                }
+            });
 
-				ctx.save();
-				ctx.globalAlpha = 0.85;
-				ctx.fillStyle = "#fff";
-				const lineHeight = textInfo.fontSize + 2;
-				const totalHeight = textInfo.lines.length * lineHeight;
-				const backgroundPadding = 6;
+            ctx.fillRect(
+                -maxLineWidth / 2 - backgroundPadding,
+                -totalHeight / 2 - backgroundPadding / 2,
+                maxLineWidth + backgroundPadding * 2,
+                totalHeight + backgroundPadding
+            );
+            ctx.restore();
 
-				ctx.font = `bold ${textInfo.fontSize}px Arial`;
-				let maxLineWidth = 0;
-				textInfo.lines.forEach((line) => {
-					const lineWidth = ctx.measureText(line).width;
-					if (lineWidth > maxLineWidth) {
-						maxLineWidth = lineWidth;
-					}
-				});
+            // Texte
+            ctx.fillStyle = "#000";
+            ctx.font = `bold ${textInfo.fontSize}px Arial`;
 
-				ctx.fillRect(
-					-maxLineWidth / 2 - backgroundPadding,
-					-totalHeight / 2 - backgroundPadding / 2,
-					maxLineWidth + backgroundPadding * 2,
-					totalHeight + backgroundPadding
-				);
-				ctx.restore();
+            const startY = (-(textInfo.lines.length - 1) * lineHeight) / 2;
+            textInfo.lines.forEach((line, lineIndex) => {
+                const lineY = startY + lineIndex * lineHeight;
+                ctx.fillText(line, 0, lineY);
+            });
 
-				ctx.fillStyle = "#000";
-				ctx.font = `bold ${textInfo.fontSize}px Arial`;
+            // Afficher le weight si > 1
+            if ((element.weight || 1) > 1) {
+                ctx.fillStyle = "#ff0000";
+                ctx.font = `bold ${Math.max(12, textInfo.fontSize * 0.7)}px Arial`;
+            }
 
-				const startY = (-(textInfo.lines.length - 1) * lineHeight) / 2;
-				textInfo.lines.forEach((line, lineIndex) => {
-					const lineY = startY + lineIndex * lineHeight;
-					ctx.fillText(line, 0, lineY);
-				});
-
-				ctx.restore();
-				ctx.restore();
-			});
-		},
-		[
-			wheelSize,
-			pointerSize,
-			borderWidth,
-			calculateAngles,
-			elements,
-			customColors,
-			hoveredElementIndex,
-			isSpinning,
-			isInternalAnimating,
-			lastSpinComplete,
-			hexToRgb,
-			adjustTextToSection,
-		]
-	);
+            ctx.restore();
+            ctx.restore();
+        });
+    },
+    [
+        wheelSize,
+        pointerSize,
+        borderWidth,
+        calculateAngles,
+        elements,
+        customColors,
+        hoveredElementIndex,
+        isSpinning,
+        isInternalAnimating,
+        lastSpinComplete,
+        hexToRgb,
+        adjustTextToSection,
+    ]
+);
 
 	const drawPointerOnly = useCallback(
 		(ctx) => {
@@ -428,94 +469,94 @@ const CustomWheel = ({
         }
 
         console.log("🎯 Target element:", elements[targetIndex].label, "at index:", targetIndex);
-        console.log("🎯 Total elements:", elements.length);
-        console.log("🎯 Current rotation:", currentRotation);
+        console.log("🎯 Current rotation:", currentRotation.toFixed(2));
 
-        const totalElements = elements.length;
-        const anglePerElement = 360 / totalElements;
-
-        console.log("🎯 Angle per element:", anglePerElement);
-
-        // NOUVEAU: Ajouter un offset aléatoire dans la section
-        // randomOffset sera entre -40% et +40% de la taille de la section
-        const maxOffsetPercent = 0.4; // 40% de la section
-        const randomOffsetPercent = (Math.random() - 0.5) * 2 * maxOffsetPercent; // Entre -0.4 et +0.4
-        const randomOffsetDegrees = randomOffsetPercent * anglePerElement;
+        const angles = calculateAngles();
+        const targetAngleInfo = angles[targetIndex];
         
-        console.log("🎲 Random offset:", randomOffsetPercent.toFixed(2), "->", randomOffsetDegrees.toFixed(2), "degrees");
+        if (!targetAngleInfo) {
+            console.error("❌ No angle info for target index:", targetIndex);
+            return null;
+        }
 
-        // Fonction pour calculer quel index sera sélectionné avec une rotation donnée
+        console.log("🎯 Target section:", targetAngleInfo.startAngle.toFixed(2), "->", targetAngleInfo.endAngle.toFixed(2));
+
+        // Générer un angle aléatoire dans cette section
+        const margin = targetAngleInfo.angleSize * 0.15;
+        const effectiveStart = targetAngleInfo.startAngle + margin;
+        const effectiveEnd = targetAngleInfo.endAngle - margin;
+        const randomAngleInSection = effectiveStart + Math.random() * (effectiveEnd - effectiveStart);
+        
+        console.log("🎲 Random angle in section:", randomAngleInSection.toFixed(2));
+
+        // CORRECTION: Calculer la rotation absolue nécessaire
+        // On veut que la flèche (270°) pointe sur randomAngleInSection
+        let targetAbsoluteRotation = 270 - randomAngleInSection;
+        
+        // Normaliser entre 0 et 360
+        while (targetAbsoluteRotation < 0) {
+            targetAbsoluteRotation += 360;
+        }
+        targetAbsoluteRotation = targetAbsoluteRotation % 360;
+        
+        // Ajouter assez de tours complets pour faire une belle animation
+        const minSpins = spinSpeed; // Tours minimum
+        const currentNormalized = currentRotation % 360;
+        
+        // Calculer combien de degrés on doit tourner depuis la position actuelle
+        let rotationNeeded = targetAbsoluteRotation - currentNormalized;
+        if (rotationNeeded < 0) {
+            rotationNeeded += 360;
+        }
+        
+        // Ajouter les tours complets
+        const totalRotationNeeded = (360 * minSpins) + rotationNeeded;
+        const finalAbsoluteRotation = currentRotation + totalRotationNeeded;
+
+        console.log("🎯 Current normalized:", currentNormalized.toFixed(2));
+        console.log("🎯 Target absolute rotation:", targetAbsoluteRotation.toFixed(2));
+        console.log("🎯 Rotation needed:", rotationNeeded.toFixed(2));
+        console.log("🎯 Total rotation needed:", totalRotationNeeded.toFixed(2));
+        console.log("🎯 Final absolute rotation:", finalAbsoluteRotation.toFixed(2));
+
+        // Vérification
+        const finalNormalized = finalAbsoluteRotation % 360;
         const getIndexForRotation = (rotation) => {
             const normalizedRotation = ((rotation % 360) + 360) % 360;
             let relativeAngle = (270 - normalizedRotation) % 360;
             if (relativeAngle < 0) relativeAngle += 360;
-            return Math.floor(relativeAngle / anglePerElement) % totalElements;
+            
+            for (let i = 0; i < angles.length; i++) {
+                const angleInfo = angles[i];
+                if (relativeAngle >= angleInfo.startAngle && relativeAngle < angleInfo.endAngle) {
+                    return i;
+                }
+            }
+            return 0;
         };
 
-        // Méthode empirique : tester toutes les rotations possibles
-        let foundRotation = null;
-        let bestRotations = []; // Stocker toutes les rotations qui donnent le bon index
-
-        // Tester chaque degré de 0 à 359 depuis la position actuelle
-        for (let testRotation = 0; testRotation < 360; testRotation += 0.5) {
-            const totalTestRotation = currentRotation + (360 * spinSpeed) + testRotation;
-            const calculatedIndex = getIndexForRotation(totalTestRotation);
-
-            if (calculatedIndex === targetIndex) {
-                bestRotations.push({
-                    rotation: totalTestRotation,
-                    offset: testRotation
-                });
-            }
-        }
-
-        if (bestRotations.length === 0) {
-            console.error("❌ Could not find rotation for target index:", targetIndex);
-            return null;
-        }
-
-        // Trouver la rotation qui se rapproche le plus du centre + offset aléatoire
-        const sectionCenter = anglePerElement / 2;
-        const targetOffsetInSection = sectionCenter + randomOffsetDegrees;
-        
-        console.log("🎯 Section center:", sectionCenter.toFixed(2), "Target offset:", targetOffsetInSection.toFixed(2));
-
-        let bestMatch = bestRotations[0];
-        let smallestDifference = Infinity;
-
-        bestRotations.forEach(rot => {
-            const offsetInSection = rot.offset % anglePerElement;
-            const difference = Math.abs(offsetInSection - targetOffsetInSection);
-            
-            if (difference < smallestDifference) {
-                smallestDifference = difference;
-                bestMatch = rot;
-            }
-        });
-
-        foundRotation = bestMatch.rotation;
-        
-        console.log("✅ Found best rotation:", bestMatch.offset.toFixed(2), "-> total:", foundRotation.toFixed(2));
-        console.log("🎯 Offset in section:", (bestMatch.offset % anglePerElement).toFixed(2), "degrees");
-
-        // Vérification finale
-        const verificationIndex = getIndexForRotation(foundRotation);
-        console.log(
-            "🔍 Final verification - Will select index:",
-            verificationIndex,
-            "element:",
-            elements[verificationIndex]?.label
-        );
+        const verificationIndex = getIndexForRotation(finalAbsoluteRotation);
+        console.log("🔍 Final normalized:", finalNormalized.toFixed(2));
+        console.log("🔍 Verification - Will select index:", verificationIndex, "element:", elements[verificationIndex]?.label);
 
         if (verificationIndex !== targetIndex) {
             console.error("❌ Verification failed! Expected index:", targetIndex, "Got index:", verificationIndex);
+            
+            // Debug supplémentaire
+            const debugRelativeAngle = (270 - finalNormalized) % 360;
+            console.log("🐛 Debug - Arrow points to angle:", debugRelativeAngle.toFixed(2));
+            angles.forEach((angleInfo, idx) => {
+                console.log(`🐛 Section ${idx}: ${angleInfo.startAngle.toFixed(2)}-${angleInfo.endAngle.toFixed(2)}`);
+            });
+            
+            return null;
         } else {
             console.log("✅ Verification passed!");
         }
 
-        return foundRotation;
+        return finalAbsoluteRotation;
     },
-    [elements, spinSpeed, currentRotation]
+    [elements, calculateAngles, currentRotation, spinSpeed]
 );
 	const startSpin = useCallback(
     (targetId = null) => {
