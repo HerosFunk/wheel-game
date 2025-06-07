@@ -124,7 +124,7 @@ const MyWheels = () => {
           onClick={() => setShowFavorites(!showFavorites)}
           className={`favorite-filter ${showFavorites ? 'active' : ''}`}
         >
-          {showFavorites ? 'Toutes les roues' : 'Favoris'}
+          {showFavorites ? 'All wheels' : 'Favorites'}
         </button>
       </div>
 
@@ -133,10 +133,12 @@ const MyWheels = () => {
           <div className="loading">Loading...</div>
         ) : wheels.length === 0 ? (
           <div className="no-wheels">
-            <p>No wheel found</p>
-            <Link to="/create-wheel">
-              <CustomButton text="Create a wheel" />
-            </Link>
+            <div className="wheel-card add-card" onClick={() => navigate('/create-wheel')} tabIndex={0} role="button">
+              <div className="add-card-content">
+                <span className="add-icon">＋</span>
+                <span>Create a wheel</span>
+              </div>
+            </div>
           </div>
         ) : (
           <>

@@ -8,7 +8,7 @@ const API_URL = "https://wheel-game.azurewebsites.net/api";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return document.cookie.includes("isAuthenticated=true");
+    return document.cookie.includes("isAuthenticated=true") && localStorage.getItem('token') != null;
   });
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
