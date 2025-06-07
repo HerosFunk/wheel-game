@@ -116,6 +116,7 @@ const EnhancedTooltip = ({ element, mousePosition, wheelSize, isVisible, element
 		return lines.join('\n');
 	}, []);
 
+
 	useEffect(() => {
 		if (!isVisible || !element || !mousePosition || !tooltipRef.current) {
 			return;
@@ -243,7 +244,7 @@ const WheelDetails = () => {
 	const [hoveredElement, setHoveredElement] = useState(null);
 	const [showResultsModal, setShowResultsModal] = useState(false);
 	const [recentResults, setRecentResults] = useState([]);
-	
+	const [targetElementId, setTargetElementId] = useState(null);	
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 	const [showTooltip, setShowTooltip] = useState(false);
 
@@ -544,63 +545,76 @@ const WheelDetails = () => {
 	};
 
 	const handleSpin = async () => {
-		if (mustSpin || !wheel || spinsLeft === "0") {
-			return;
-		}
+    if (mustSpin || !wheel || spinsLeft === "0") {
+        return;
+    }
 
-		try {
-			setShowConfetti(false);
-			
-			if (wheel.removeAfterSelection && selectedElement) {
-				const updatedElements = wheel.elements.filter(
-					(element) => element._id !== selectedElement._id
-				);
-				setWheel({
-					...wheel,
-					elements: updatedElements.filter((element) => element.isActif === true),
-				});
-			}
-			
-			setSelectedElement(null);
-			playSpinSound();
-			setMustSpin(true);
+    try {
+        setShowConfetti(false);
+        
+        if (wheel.removeAfterSelection && selectedElement) {
+            const updatedElements = wheel.elements.filter(
+                (element) => element._id !== selectedElement._id
+            );
+            setWheel({
+                ...wheel,
+                elements: updatedElements.filter((element) => element.isActif === true),
+            });
+        }
+        
+        setSelectedElement(null);
+        setTargetElementId(null);
+        playSpinSound();
 
-			const response = await spinWheel(wheelId);
+        console.log('🚀 Calling spinWheel API...');
+        const response = await spinWheel(wheelId);
+        console.log('📡 Received response:', response.data);
 
-			if (response.data) {
-				if (wheel.numberOfSpins !== -1) {
-					const currentSpins = parseInt(spinsLeft);
-					if (!isNaN(currentSpins)) {
-						setSpinsLeft(Math.max(0, currentSpins - 1).toString());
-					} else {
-						setSpinsLeft(wheel.numberOfSpins.toString());
-					}
-				} else {
-					setSpinsLeft("Unlimited");
-				}
+        if (response.data) {
+            // IMPORTANT: Définir l'élément ciblé AVANT de démarrer la rotation
+            if (response.data.result) {
+                console.log('🎯 Setting target element ID:', response.data.result);
+                setTargetElementId(response.data.result);
+            }
 
-				if (response.data.resultDetails) {
-					const newSelectedElement = {
-						_id: response.data.result,
-						label: response.data.resultDetails.label,
-						weight: response.data.resultDetails.weight,
-						color: wheel.elements.find(el => el._id === response.data.result)?.color
-					};
-					setSelectedElement(newSelectedElement);
-				}
+            // Maintenant seulement démarrer la rotation
+            console.log('🎯 Starting wheel spin...');
+            setMustSpin(true);
 
-				if (response.data.dernierResultat) {
-					setLastResult(response.data.dernierResultat);
-				}
+            if (wheel.numberOfSpins !== -1) {
+                const currentSpins = parseInt(spinsLeft);
+                if (!isNaN(currentSpins)) {
+                    setSpinsLeft(Math.max(0, currentSpins - 1).toString());
+                } else {
+                    setSpinsLeft(wheel.numberOfSpins.toString());
+                }
+            } else {
+                setSpinsLeft("Unlimited");
+            }
 
-				await loadRecentResults();
-			}
-		} catch (error) {
-			console.error("Error during spin:", error);
-			setErrorMessage("Error during spin");
-			setMustSpin(false);
-		}
-	};
+            if (response.data.resultDetails) {
+                const newSelectedElement = {
+                    _id: response.data.result,
+                    label: response.data.resultDetails.label,
+                    weight: response.data.resultDetails.weight,
+                    color: wheel.elements.find(el => el._id === response.data.result)?.color
+                };
+                setSelectedElement(newSelectedElement);
+            }
+
+            if (response.data.dernierResultat) {
+                setLastResult(response.data.dernierResultat);
+            }
+
+            await loadRecentResults();
+        }
+    } catch (error) {
+        console.error("Error during spin:", error);
+        setErrorMessage("Error during spin");
+        setMustSpin(false);
+        setTargetElementId(null);
+    }
+};
 
 	const handleSpinEnd = (element) => {
 		if (!element) return;
@@ -660,8 +674,15 @@ const WheelDetails = () => {
 	}, [wheel]);
 
 	const activeElements = useMemo(() => {
-		return wheel ? wheel.elements.filter(element => element.isActif) : [];
-	}, [wheel]);
+    const filtered = wheel ? wheel.elements.filter(element => element.isActif) : [];
+    console.log('🔄 Active elements order:', filtered.map((el, index) => ({ 
+        index, 
+        id: el._id, 
+        label: el.label,
+        isActif: el.isActif 
+    })));
+    return filtered;
+}, [wheel]);
 
 	useEffect(() => {
 		if (wheel) {
@@ -744,6 +765,7 @@ const WheelDetails = () => {
 						disabled={wheelDisabled}
 						onElementHover={handleElementHover}
 						selectedElement={selectedElement}
+						targetElementId={targetElementId}
 						result={selectedElement}
 					/>
 				</div>

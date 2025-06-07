@@ -15,7 +15,6 @@ const Home = () => {
   useEffect(() => {
     const fetchWheels = async () => {
       try {
-        console.log("fetch")
         const response = await fetch("http://localhost:3000/wheels", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
