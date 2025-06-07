@@ -436,6 +436,14 @@ const CustomWheel = ({
 
         console.log("🎯 Angle per element:", anglePerElement);
 
+        // NOUVEAU: Ajouter un offset aléatoire dans la section
+        // randomOffset sera entre -40% et +40% de la taille de la section
+        const maxOffsetPercent = 0.4; // 40% de la section
+        const randomOffsetPercent = (Math.random() - 0.5) * 2 * maxOffsetPercent; // Entre -0.4 et +0.4
+        const randomOffsetDegrees = randomOffsetPercent * anglePerElement;
+        
+        console.log("🎲 Random offset:", randomOffsetPercent.toFixed(2), "->", randomOffsetDegrees.toFixed(2), "degrees");
+
         // Fonction pour calculer quel index sera sélectionné avec une rotation donnée
         const getIndexForRotation = (rotation) => {
             const normalizedRotation = ((rotation % 360) + 360) % 360;
@@ -446,39 +454,49 @@ const CustomWheel = ({
 
         // Méthode empirique : tester toutes les rotations possibles
         let foundRotation = null;
+        let bestRotations = []; // Stocker toutes les rotations qui donnent le bon index
 
         // Tester chaque degré de 0 à 359 depuis la position actuelle
-        for (let testRotation = 0; testRotation < 360; testRotation += 1) {
+        for (let testRotation = 0; testRotation < 360; testRotation += 0.5) {
             const totalTestRotation = currentRotation + (360 * spinSpeed) + testRotation;
             const calculatedIndex = getIndexForRotation(totalTestRotation);
 
             if (calculatedIndex === targetIndex) {
-                foundRotation = totalTestRotation;
-                console.log("✅ Found working rotation:", testRotation, "-> total:", totalTestRotation, "-> index:", calculatedIndex);
-                break;
+                bestRotations.push({
+                    rotation: totalTestRotation,
+                    offset: testRotation
+                });
             }
         }
 
-        // Si on n'a pas trouvé avec les degrés entiers, tester avec plus de précision
-        if (foundRotation === null) {
-            for (let testRotation = 0; testRotation < 360; testRotation += 0.1) {
-                const totalTestRotation = currentRotation + (360 * spinSpeed) + testRotation;
-                const calculatedIndex = getIndexForRotation(totalTestRotation);
-
-                if (calculatedIndex === targetIndex) {
-                    foundRotation = totalTestRotation;
-                    console.log("✅ Found working rotation (precise):", testRotation, "-> total:", totalTestRotation, "-> index:", calculatedIndex);
-                    break;
-                }
-            }
-        }
-
-        if (foundRotation === null) {
+        if (bestRotations.length === 0) {
             console.error("❌ Could not find rotation for target index:", targetIndex);
             return null;
         }
 
-        console.log("🎯 Final rotation:", foundRotation);
+        // Trouver la rotation qui se rapproche le plus du centre + offset aléatoire
+        const sectionCenter = anglePerElement / 2;
+        const targetOffsetInSection = sectionCenter + randomOffsetDegrees;
+        
+        console.log("🎯 Section center:", sectionCenter.toFixed(2), "Target offset:", targetOffsetInSection.toFixed(2));
+
+        let bestMatch = bestRotations[0];
+        let smallestDifference = Infinity;
+
+        bestRotations.forEach(rot => {
+            const offsetInSection = rot.offset % anglePerElement;
+            const difference = Math.abs(offsetInSection - targetOffsetInSection);
+            
+            if (difference < smallestDifference) {
+                smallestDifference = difference;
+                bestMatch = rot;
+            }
+        });
+
+        foundRotation = bestMatch.rotation;
+        
+        console.log("✅ Found best rotation:", bestMatch.offset.toFixed(2), "-> total:", foundRotation.toFixed(2));
+        console.log("🎯 Offset in section:", (bestMatch.offset % anglePerElement).toFixed(2), "degrees");
 
         // Vérification finale
         const verificationIndex = getIndexForRotation(foundRotation);
@@ -499,7 +517,6 @@ const CustomWheel = ({
     },
     [elements, spinSpeed, currentRotation]
 );
-
 	const startSpin = useCallback(
     (targetId = null) => {
         if (disabled || isInternalAnimating || elements.length === 0 || spinStartedRef.current) {
