@@ -3,9 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import CustomWheel from "./CustomWheel";
 import { Pencil } from "lucide-react";
+import config from "../config/config";
 import "./CreateWheel.css";
 
-const API_URL = "https://wheel-game.azurewebsites.net/api";
+const API_URL = `${config.apiUrl}/wheel-game-api`;
 
 const CreateWheel = () => {
 	const { wheelId } = useParams();

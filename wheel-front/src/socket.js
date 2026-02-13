@@ -1,5 +1,4 @@
 import { io } from 'socket.io-client';
+import config from './config/config';
 
-const URL = "https://wheel-game.azurewebsites.net/api";
-
-export const socket = io(URL);
+export const socket = io(config.apiUrl);

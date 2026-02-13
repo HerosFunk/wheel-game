@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CustomButton from "../components/CustomButton";
 import Footer from "../components/Footer";
 import money_emoji from "../img/money_emoji.png";
+import config from "../config/config";
 import "./Home.css";
 
 const img_list = [money_emoji];
@@ -15,7 +16,7 @@ const Home = () => {
 	useEffect(() => {
 		const fetchWheels = async () => {
 			try {
-				const response = await fetch("https://wheel-game.azurewebsites.net/api/wheels", {
+				const response = await fetch(`${config.apiUrl}/wheel-game-api/wheels`, {
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("token")}`,
 					},

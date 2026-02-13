@@ -5,12 +5,12 @@ services:
     image: mongo:latest
     container_name: wheel-game-mongodb
     ports:
-      - "27017:27017"
+      - "${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
       - wheel-network
 
@@ -20,11 +20,11 @@ services:
       dockerfile: Dockerfile
     container_name: wheel-game-backend
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     environment:
-      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/wheel-game?authSource=admin
-      - JWT_SECRET=your_jwt_secret_key
-      - NODE_ENV=development
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=${NODE_ENV}
     depends_on:
       - mongodb
     networks:
@@ -36,10 +36,9 @@ services:
       dockerfile: Dockerfile
     container_name: wheel-game-frontend
     ports:
-      - "3001:3001"
+      - "${FRONTEND_PORT:-3001}:3001"
     environment:
-      - REACT_APP_API_URL=https://wheel-game.azurewebsites.net
-      - REACT_APP_SOCKET_URL=https://wheel-game.azurewebsites.net
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
     depends_on:
       - backend
     networks:

@@ -9,9 +9,9 @@ import ResultsDisplay from "./ResultsDisplay";
 import { getWheel, spinWheel, updateElementStatus, setAllElementsActive, resetResults } from "../services/api";
 import "./WheelDetails.css";
 import io from "socket.io-client";
+import config from "../config/config";
 
 const notify = () => toast("Link copied!");
-const API_URL = "https://wheel-game.azurewebsites.net";
 
 const ViewerCounter = ({ count }) => {
 	const [isUpdating, setIsUpdating] = useState(false);
@@ -331,7 +331,7 @@ const WheelDetails = () => {
 
 	const loadRecentResults = async () => {
 		try {
-			const response = await fetch(`https://wheel-game.azurewebsites.net/api/wheels/${wheelId}/results/recent?limit=5`, {
+			const response = await fetch(`${config.apiUrl}/wheel-game-api/wheels/${wheelId}/results/recent?limit=5`, {
 				headers: {
 					Authorization: `Bearer ${localStorage.getItem("token")}`,
 				},
@@ -424,7 +424,7 @@ const WheelDetails = () => {
 	}, []);
 
 	useEffect(() => {
-		const newSocket = io(process.env.REACT_APP_API_URL || "https://wheel-game.azurewebsites.net");
+		const newSocket = io(config.apiUrl);
 		setSocket(newSocket);
 
 		return () => {

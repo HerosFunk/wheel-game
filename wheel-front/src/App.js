@@ -3,8 +3,9 @@ import { BrowserRouter as Router } from "react-router-dom";
 import AppRoutes from "./Routes";
 import "./App.css";
 import { socket } from './socket';
+import config from './config/config';
 
-const API_URL = "https://wheel-game.azurewebsites.net/api";
+const API_URL = `${config.apiUrl}/wheel-game-api`;
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
