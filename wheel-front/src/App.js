@@ -92,7 +92,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/spin-game">
       <AppRoutes />
     </Router>
   );
