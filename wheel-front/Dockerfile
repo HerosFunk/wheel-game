@@ -6,9 +6,7 @@ COPY package*.json ./
 
 RUN npm install
 
-# Copier les fichiers publics et sources
-COPY public ./public
-COPY src ./src
+# Copier tous les fichiers du projet
 COPY . .
 
 # Exposer le port 3001 (port par défaut de React)
