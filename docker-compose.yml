@@ -12,6 +12,8 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=${NODE_ENV}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - wheel-network
 
