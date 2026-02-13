@@ -11,7 +11,7 @@ const random_img_number = Math.floor(Math.random() * img_list.length);
 
 const Home = () => {
 	const navigate = useNavigate();
-	const [wheels, setWheels] = useState([]);
+	const [, setWheels] = useState([]);
 
 	useEffect(() => {
 		const fetchWheels = async () => {

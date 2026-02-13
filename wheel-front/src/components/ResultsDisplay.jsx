@@ -117,6 +117,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     return elements.filter(Boolean);
   }, [results]);
 
+  // eslint-disable-next-line no-unused-vars
   const exportData = useCallback((format = 'csv') => {
     if (!results || results.length === 0) return;
     
@@ -218,6 +219,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     }
   }, [isVisible, wheelId, activeTab, loadRecentResults, loadStats]);
 
+  // eslint-disable-next-line no-unused-vars
   const formatDate = useCallback((dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
@@ -239,6 +241,7 @@ const ResultsDisplay = ({ wheelId, isVisible, onClose }) => {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const loadMoreHistory = useCallback(() => {
     if (hasMore && !loading && activeTab === 'history') {
       const nextPage = page + 1;

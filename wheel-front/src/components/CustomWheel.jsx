@@ -188,7 +188,8 @@ const CustomWheel = ({
 
 			return hoveredIndex;
 		},
-		[getElementIndexAtAngle, elements]
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[getElementIndexAtAngle]
 	);
 
 	const handleMouseMove = useCallback(
@@ -340,9 +341,9 @@ const CustomWheel = ({
 				ctx.restore();
 			});
 		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[
 			wheelSize,
-			pointerSize,
 			borderWidth,
 			calculateAngles,
 			elements,
@@ -392,7 +393,8 @@ const CustomWheel = ({
 
 			ctx.restore();
 		},
-		[showPointer, wheelSize, pointerSize, borderWidth, pointerColor]
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[showPointer, wheelSize, borderWidth, pointerColor]
 	);
 
 	const animate = useCallback(

@@ -1,22 +1,28 @@
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copier les fichiers package
 COPY package*.json ./
 
-# Installer les dépendances
 RUN npm ci --legacy-peer-deps
 
-# Copier le reste des fichiers (node_modules sera ignoré via .dockerignore)
 COPY . .
 
-# Exposer le port 3001
-EXPOSE 3001
+# Build arg for API URL (baked into the React build)
+# Empty string means the frontend will use relative URLs (same origin via nginx proxy)
+ARG REACT_APP_API_URL=
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# Variable d'environnement pour désactiver le hot reload qui cause des problèmes
-ENV WATCHPACK_POLLING=true
-ENV CHOKIDAR_USEPOLLING=true
+RUN npm run build
 
-# Démarrer l'application
-CMD ["npm", "start"] 
+# Production stage
+FROM nginx:alpine
+
+COPY --from=build /app/build /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

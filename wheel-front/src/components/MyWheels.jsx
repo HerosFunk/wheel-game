@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import "./MyWheels.css";
-import CustomButton from './CustomButton';
 import { getWheels, deleteWheel, toggleFavorite } from '../services/api';
 
 const MyWheels = () => {
@@ -40,6 +39,7 @@ const MyWheels = () => {
 
   useEffect(() => {
     fetchWheels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, sortOrder, showFavorites]);
 
   const handleSortChange = (newSortBy) => {

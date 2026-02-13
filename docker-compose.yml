@@ -6,12 +6,16 @@ services:
       context: ./wheel-api
       dockerfile: Dockerfile
     container_name: wheel-game-backend
+    restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - JWT_SECRET=${JWT_SECRET}
-      - NODE_ENV=${NODE_ENV}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PASSWORD_CREATOR=${PASSWORD_CREATOR:-creator}
+      - PASSWORD_CLIENT=${PASSWORD_CLIENT:-client}
+      - FRONTEND_URL=${FRONTEND_URL:-*}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -21,11 +25,12 @@ services:
     build:
       context: ./wheel-front
       dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ""
     container_name: wheel-game-frontend
+    restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3001}:3001"
-    environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL}
     depends_on:
       - backend
     networks:
@@ -33,4 +38,4 @@ services:
 
 networks:
   wheel-network:
-    driver: bridge 
+    driver: bridge

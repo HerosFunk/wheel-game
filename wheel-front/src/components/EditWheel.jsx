@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import CustomWheel from "./CustomWheel";
-import { Pencil } from "lucide-react";
 import config from "../config/config";
 
 const API_URL = `${config.apiUrl}/wheel-game-api`;
@@ -22,7 +21,7 @@ const EditWheel = () => {
 	const navigate = useNavigate();
 	const [isWheelVisible, setIsWheelVisible] = useState(false);
 	const [wheel, setWheel] = useState(null);
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [, setIsModalOpen] = useState(false);
 	const [recentResults, setRecentResults] = useState([]);
 
 	const colorPalette = [
@@ -113,6 +112,7 @@ const EditWheel = () => {
 
 			fetchWheel();
 		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [wheelId]);
 
 	const assignColors = (elements, colorPalette) => {
@@ -165,13 +165,6 @@ const EditWheel = () => {
 			const updatedSegments = segments.map((segment, i) => (i === index ? { ...segment, weight: weight } : segment));
 			setSegments(updatedSegments);
 		}
-	};
-
-	const splitTextIntoLines = (text, maxCharsPerLine) => {
-		if (!text || text.length <= maxCharsPerLine) return text;
-		const cutIndex = text.indexOf(" ", maxCharsPerLine);
-		if (cutIndex === -1) return text;
-		return `${text.substring(0, cutIndex)}...`;
 	};
 
 	const handleCheckboxChange = (option) => {

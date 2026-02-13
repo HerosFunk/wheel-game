@@ -2,7 +2,7 @@ import axios from 'axios';
 import config from '../config/config';
 
 const api = axios.create({
-    baseURL: `${config.apiUrl}/api`,
+    baseURL: `${config.apiUrl}/wheel-game-api`,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -25,7 +25,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('useroken');
+            localStorage.removeItem('token');
             window.location.href = '/';
         }
         return Promise.reject(error);

@@ -3,10 +3,9 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import money_emoji from "../img/money_emoji.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Cookies from "js-cookie";
 import CustomWheel from "./CustomWheel";
 import ResultsDisplay from "./ResultsDisplay";
-import { getWheel, spinWheel, updateElementStatus, setAllElementsActive, resetResults } from "../services/api";
+import { getWheel, spinWheel } from "../services/api";
 import "./WheelDetails.css";
 import io from "socket.io-client";
 import config from "../config/config";
@@ -291,14 +290,17 @@ const WheelDetails = () => {
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(true);
 	const [mustSpin, setMustSpin] = useState(false);
-	const [results, setResults] = useState([]);
+	const [results, ] = useState([]);
+	// eslint-disable-next-line no-unused-vars
 	const [isSocketReady, setIsSocketReady] = useState(false);
 	const [showConfetti, setShowConfetti] = useState(false);
 	const [selectedElement, setSelectedElement] = useState(null);
 	const [socket, setSocket] = useState(null);
+	// eslint-disable-next-line no-unused-vars
 	const [lastResult, setLastResult] = useState(null);
 	const [hoveredElement, setHoveredElement] = useState(null);
 	const [showResultsModal, setShowResultsModal] = useState(false);
+	// eslint-disable-next-line no-unused-vars
 	const [recentResults, setRecentResults] = useState([]);
 	const [targetElementId, setTargetElementId] = useState(null);
 	const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -363,7 +365,6 @@ const WheelDetails = () => {
 		}
 	};
 
-	const userRole = Cookies.get("role") || "";
 
 	const fetchWheel = async () => {
 		try {
@@ -436,6 +437,7 @@ const WheelDetails = () => {
 
 	useEffect(() => {
 		fetchWheel();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [wheelId]);
 
 	const playSpinSound = useCallback(() => {
@@ -617,6 +619,7 @@ const WheelDetails = () => {
 				socket.emit("wheel:leave", wheelId);
 			};
 		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [socket, wheel, wheelId, mustSpin, playSpinSound]);
 
 	const handleSpin = async () => {
