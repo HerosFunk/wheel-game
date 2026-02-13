@@ -1,23 +1,33 @@
 version: '3.8'
 
 services:
+  mongo:
+    image: mongo:7
+    container_name: wheel-game-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    networks:
+      - wheel-network
+
   backend:
     build:
       context: ./wheel-api
       dockerfile: Dockerfile
     container_name: wheel-game-backend
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD}@mongo:27017/wheel-game?authSource=admin
       - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=${NODE_ENV:-production}
       - PASSWORD_CREATOR=${PASSWORD_CREATOR:-creator}
       - PASSWORD_CLIENT=${PASSWORD_CLIENT:-client}
       - FRONTEND_URL=${FRONTEND_URL:-*}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mongo
     networks:
       - wheel-network
 
@@ -30,11 +40,14 @@ services:
     container_name: wheel-game-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3001}:3001"
+      - "${FRONTEND_PORT:-3001}:80"
     depends_on:
       - backend
     networks:
       - wheel-network
+
+volumes:
+  mongo-data:
 
 networks:
   wheel-network:
