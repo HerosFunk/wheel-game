@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: wheel-game-mongodb
-    ports:
-      - "${MONGODB_PORT:-27017}:27017"
-    volumes:
-      - mongodb_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-    networks:
-      - wheel-network
-
   backend:
     build:
       context: ./wheel-api
@@ -25,8 +12,6 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=${NODE_ENV}
-    depends_on:
-      - mongodb
     networks:
       - wheel-network
 
@@ -46,7 +31,4 @@ services:
 
 networks:
   wheel-network:
-    driver: bridge
-
-volumes:
-  mongodb_data: 
+    driver: bridge 
