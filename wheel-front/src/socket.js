@@ -1,9 +1,7 @@
 import { io } from 'socket.io-client';
-import config from './config/config';
 
-// In production, socket.io connects via /spin-game/socket.io/ path (nginx proxies to backend)
-const socketOptions = process.env.NODE_ENV === 'production'
-  ? { path: '/spin-game/socket.io/' }
-  : {};
+// In production, socket.io connects to same origin via /spin-game/socket.io/ path (nginx proxies to backend)
+// In dev, connect directly to localhost:3000
+const socket = io({ path: '/spin-game/socket.io/' })
 
-export const socket = io(config.apiUrl || undefined, socketOptions);
+export { socket };

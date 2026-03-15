@@ -425,10 +425,8 @@ const WheelDetails = () => {
 	}, []);
 
 	useEffect(() => {
-		const socketOpts = process.env.NODE_ENV === 'production'
-			? { path: '/spin-game/socket.io/' }
-			: {};
-		const newSocket = io(config.apiUrl || undefined, socketOpts);
+		const newSocket = io({ path: '/spin-game/socket.io/' })
+
 		setSocket(newSocket);
 
 		return () => {
