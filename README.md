@@ -27,3 +27,7 @@ cd wheel-front
 npm install
 npm start
 ```
+
+
+<img width="1913" height="875" alt="image" src="https://github.com/user-attachments/assets/a1df3abd-fba2-4b1b-a5ec-d785600c3c98" />
+
